@@ -1,5 +1,5 @@
 import React from "react";
-import { Opulento, Lumiflex, Tranquiluxe, Novatrix, Velustro, Zenitho} from "uvcanvas";
+import { Opulento, Lumiflex, Tranquiluxe, Velustro } from "uvcanvas";
 
 const DynamicBackground = ({ theme }) => {
 
@@ -12,14 +12,8 @@ const DynamicBackground = ({ theme }) => {
     if (theme.label === "Opulento" ){
         return       <Opulento className="dynamicBackground"/>
     }
-    if (theme.label === "Novatrix" ){
-        return       <Novatrix className="dynamicBackground"/>
-    }
     if (theme.label === "Velustro" ){
         return       <Velustro className="dynamicBackground"/>
-    }
-    if (theme.label === "Zenitho" ){
-        return       <Zenitho className="dynamicBackground"/>
     }
     return null;
 };

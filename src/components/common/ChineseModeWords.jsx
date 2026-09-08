@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef } from "react";
+import React, { memo, useRef } from "react";
 import SmoothCaret from "../features/TypeBox/SmoothCaret";
 
 const ChineseModeWords = ({
@@ -7,7 +7,6 @@ const ChineseModeWords = ({
   currCharIndex,
   wordsKey,
   chineseDisplayMode,
-  isUltraZenMode,
   status,
   wordSpanRefs,
   startIndex,
@@ -32,11 +31,6 @@ const ChineseModeWords = ({
 
   // The full-length wordSpanRefs (attached to each pinyin span below) serves
   // both the TypeBox scroll anchoring and the SmoothCaret measurement.
-  const getWordOpacity = useCallback(
-    (globalIndex) =>
-      Math.max(1 - Math.abs(globalIndex - currWordIndex) * 0.1, 0.1),
-    [currWordIndex]
-  );
 
   return (
     <div
@@ -61,16 +55,9 @@ const ChineseModeWords = ({
       <div className="words notranslate" translate="no">
         {currentWords.map((word, i) => {
           const globalIndex = startIndex + i;
-          const opacityValue = isUltraZenMode ? getWordOpacity(globalIndex) : 1;
 
           return (
-            <div
-              key={globalIndex}
-              style={{
-                opacity: opacityValue,
-                transition: "500ms",
-              }}
-            >
+            <div key={globalIndex}>
               <span
                 className={getChineseWordKeyClassName(globalIndex)}
                 style={hanziStyle}

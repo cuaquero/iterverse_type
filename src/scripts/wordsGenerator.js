@@ -16,10 +16,6 @@ import {
   generateRandomNumChras,
   generateRandomSymbolChras,
 } from "./randomCharsGenerator";
-import {
-  VOCAB_DICTIONARIES,
-  DICTIONARY_SOURCE_CATALOG,
-} from "../constants/DictionaryConstants";
 
 // hard — select from random-words wordList with seeded RNG for determinism
 const HARD_ENGLISH_WORDS = hardWordList.filter((w) => w.length <= 7);
@@ -118,15 +114,4 @@ const chineseWordsGenerator = (
   }
 };
 
-const wordsCardVocabGenerator = (vocabSource, chapter) => {
-  const wordsList = [];
-  const chapterCatalog = DICTIONARY_SOURCE_CATALOG[vocabSource];
-  const chapterStartIndex = chapterCatalog[chapter][0];
-  const chapterEndIndex = chapterCatalog[chapter][1];
-  for (let i = chapterStartIndex; i < chapterEndIndex + 1; i++) {
-    wordsList.push(VOCAB_DICTIONARIES[vocabSource][i]);
-  }
-  return wordsList;
-};
-
-export { wordsGenerator, chineseWordsGenerator, wordsCardVocabGenerator };
+export { wordsGenerator, chineseWordsGenerator };

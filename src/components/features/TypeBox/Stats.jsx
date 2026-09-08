@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Tooltip } from "@mui/material";
 import {
   Line,
@@ -11,9 +11,6 @@ import {
   ComposedChart,
 } from "recharts";
 import { red } from "@mui/material/colors";
-import Leaderboard from "../Leaderboard/Leaderboard";
-import { addScore } from "../../../services/scoreHistory";
-import { evaluateBadges } from "../../../services/badges";
 import { useLocale } from "../../../context/LocaleContext";
 const Stats = ({
   status,
@@ -33,12 +30,8 @@ const Stats = ({
   difficulty,
   numberAddon,
   symbolAddon,
-  sessionSeed,
-  isCustomMode,
-  customListName,
 }) => {
   const { t } = useLocale();
-  const statsRef = useRef(null);
   const [roundedRawWpm, setRoundedRawWpm] = useState(0);
   const roundedWpm = Math.round(wpm);
 
@@ -146,42 +139,6 @@ const Stats = ({
       return () => worker.terminate();
     }
   }, [countDown, elapsedSeconds, status, isInfiniteMode]);
-
-  const modeParams = useMemo(
-    () => ({
-      language,
-      difficulty,
-      duration: countDownConstant,
-      numberAddon,
-      symbolAddon,
-    }),
-    [language, difficulty, countDownConstant, numberAddon, symbolAddon]
-  );
-
-  // Save score to local history and evaluate badges when session finishes
-  const [historySaved, setHistorySaved] = useState(false);
-  const [newBadges, setNewBadges] = useState([]);
-  useEffect(() => {
-    if (status === "finished" && !historySaved) {
-      // Custom-words runs aren't recorded: scores depend on the user's chosen
-      // words so they aren't comparable to random-mode history/badges/etc.
-      // Leaderboard submission is also blocked downstream in Leaderboard.jsx.
-      if (finalWpm > 0 && !isCustomMode) {
-        addScore({ wpm: finalWpm, accuracy, ...modeParams });
-        const earned = evaluateBadges({ wpm: finalWpm, accuracy, ...modeParams });
-        if (earned.length > 0) {
-          setNewBadges(earned);
-        }
-        window.dispatchEvent(new Event("eletypes-score-updated"));
-      }
-      setHistorySaved(true);
-    }
-    if (status === "started") {
-      setHistorySaved(false);
-      setNewBadges([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
 
   const getFormattedLanguageLanguageName = (value) => {
     switch (value) {
@@ -360,7 +317,7 @@ const Stats = ({
       {status === "finished" && (
         <div className="stats-overlay">
           <section className="stats-chart">
-            <div ref={statsRef} style={{ background: theme.background, padding: "16px", borderRadius: "8px" }}>
+            <div style={{ background: theme.background, padding: "16px", borderRadius: "8px" }}>
               <section className="stats-header">
                 <div>
                   {renderWpm()}
@@ -376,34 +333,6 @@ const Stats = ({
               </section>
             </div>
             <section>{renderResetButton()}</section>
-            {newBadges.length > 0 && (
-              <div className="badge-notification">
-                <span className="badge-notification-label">
-                  {t("badge_unlocked")}
-                </span>
-                <div className="badge-notification-list">
-                  {newBadges.map((b) => (
-                    <span key={b.id} className="badge-notification-item">
-                      {b.icon} {t(b.nameKey)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <Leaderboard
-              wpm={Math.round(finalWpm)}
-              accuracy={accuracy}
-              language={language}
-              difficulty={difficulty}
-              duration={countDownConstant}
-              numberAddon={numberAddon}
-              symbolAddon={symbolAddon}
-              theme={theme}
-              statsRef={statsRef}
-              sessionSeed={sessionSeed}
-              isCustomMode={isCustomMode}
-              customListName={customListName}
-            />
           </section>
         </div>
       )}

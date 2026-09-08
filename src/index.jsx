@@ -3,15 +3,13 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import KeyboardLabPage from "./pages/KeyboardLabPage";
-import MarkdownPage from "./pages/MarkdownPage";
+import KioskPage from "./pages/KioskPage";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
     <Routes>
-      <Route path="/keyboardlab" element={<KeyboardLabPage />} />
-      <Route path="/markdown" element={<MarkdownPage />} />
+      <Route path="/kiosk" element={<KioskPage />} />
       <Route path="/*" element={<App />} />
     </Routes>
   </BrowserRouter>

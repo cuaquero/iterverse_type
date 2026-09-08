@@ -1,0 +1,122 @@
+/* Iterverse Design System — design tokens
+   Built on BTECH's official brand foundation (Bridgerland Technical
+   College Style Guide - Logos and Branding, 2019). See README.md for
+   full sourcing and usage rules. Import this file, then fonts.css,
+   in any project under the Iterverse umbrella. */
+
+:root {
+  /* ---- Primary brand (official; PMS noted) ---- */
+  --btech-red: #d22030;        /* Primary Red · PMS 1797c */
+  --btech-red-dark: #a81826;   /* pressed / darker red */
+  --btech-red-light: #e24351;  /* lighter red */
+  --btech-gray: #36393b;       /* Primary Grey · PMS 412c */
+  --btech-gray-dark: #232526;
+  --btech-gray-light: #6a6d70;
+
+  /* Primary tint scale (allowed per guide: 100/80/60/40/20%) */
+  --red-80: #db4d59; --red-60: #e57a83; --red-40: #eea6ac; --red-20: #f6d2d6;
+  --gray-80: #5e6062; --gray-60: #868889; --gray-40: #afb0b1; --gray-20: #d7d7d8;
+
+  /* ---- Neutrals ---- */
+  --white: #ffffff;
+  --neutral-50: #f7f7f8;
+  --neutral-100: #eeeeef;
+  --neutral-200: #e0e0e2;
+  --neutral-300: #c8c8cc;
+  --neutral-400: #a8a8ae;
+  --neutral-500: #8a8a90;
+  --neutral-600: #6a6a70;
+  --neutral-700: #56565b;
+  --neutral-800: #3a3a3e;
+  --neutral-900: #232326;
+  --black: #161618;
+
+  /* ---- Secondary palette (approved, 2019 brand guide) - use in SMALL
+     proportions (<30% of any one piece), never overwhelming the primaries. ---- */
+  --secondary-green: #63b346;
+  --secondary-blue: #18499d;
+  --secondary-gold: #f9c915;
+  --secondary-brown: #692e12;
+
+  /* ---- Semantic aliases - what actual UI code should reference ---- */
+  --color-brand: var(--btech-red);
+  --color-brand-hover: var(--btech-red-dark);
+  --color-accent: var(--btech-gray);
+
+  --text-strong: var(--neutral-900);
+  --text-body: var(--neutral-800);
+  --text-muted: var(--neutral-600);
+  --text-inverse: var(--white);
+  --text-brand: var(--btech-red);
+  --text-link: var(--btech-red);
+  --text-link-hover: var(--btech-red-dark);
+
+  --surface-page: var(--neutral-50);
+  --surface-subtle: var(--neutral-100);
+  --surface-card: var(--white);
+  --surface-inverse: var(--btech-gray);
+  --surface-brand: var(--btech-red);
+
+  --border-subtle: var(--neutral-200);
+  --border-default: var(--neutral-300);
+  --border-strong: var(--neutral-500);
+
+  --focus-ring: var(--btech-red);
+
+  --color-success: #1f7a45;
+  --color-warning: var(--secondary-gold);
+  /* Danger is deliberately the same red as brand, per BTECH's own tokens
+     (not an unapproved color this project invented) - primary vs.
+     destructive actions are distinguished by fill (solid) vs. outline
+     treatment, not by a different hue. */
+  --color-danger: var(--btech-red);
+  --color-info: var(--secondary-blue);
+
+  /* ---- Typography ---- */
+  --font-sans: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+
+  /* Type scale - 1.25 major third, base 16px */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 1.875rem;
+  --fs-3xl: 2.25rem;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.25;
+  --lh-normal: 1.5;
+
+  /* ---- Spacing - 4px base grid ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ---- Radii - restrained; the brand mark is angular/hexagonal ---- */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation - soft, cool-gray shadows, never black or colored ---- */
+  --shadow-xs: 0 1px 2px rgba(35, 35, 38, .06);
+  --shadow-sm: 0 1px 3px rgba(35, 35, 38, .10), 0 1px 2px rgba(35, 35, 38, .06);
+  --shadow-md: 0 4px 12px rgba(35, 35, 38, .10), 0 2px 4px rgba(35, 35, 38, .06);
+  --shadow-focus: 0 0 0 3px rgba(210, 32, 48, .28);
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+}

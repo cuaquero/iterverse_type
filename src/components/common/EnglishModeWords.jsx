@@ -1,10 +1,9 @@
-import React, { memo, useCallback, useRef } from "react";
+import React, { memo, useRef } from "react";
 import SmoothCaret from "../features/TypeBox/SmoothCaret";
 
 const EnglishModeWords = ({
   currWordIndex,
   currCharIndex,
-  isUltraZenMode,
   currentWords,
   status,
   wordSpanRefs,
@@ -16,13 +15,6 @@ const EnglishModeWords = ({
   theme,
 }) => {
   const containerRef = useRef(null);
-
-  // Get word opacity for focus mode
-  const getWordOpacity = useCallback(
-    (globalIndex) =>
-      Math.max(1 - Math.abs(globalIndex - currWordIndex) * 0.1, 0.1),
-    [currWordIndex]
-  );
 
   return (
     <div
@@ -52,10 +44,6 @@ const EnglishModeWords = ({
             <span
               key={globalIndex}
               ref={wordSpanRefs[globalIndex]}
-              style={{
-                opacity: isUltraZenMode ? getWordOpacity(globalIndex) : "1",
-                transition: "500ms",
-              }}
               className={getWordClassName(globalIndex)}
             >
               {word.split("").map((char, idx) => (

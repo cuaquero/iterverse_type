@@ -124,6 +124,63 @@ export const fetchLeaderboard = async ({
   return data;
 };
 
+// ---- Kiosk mode: a same-day, arcade-style high score board. ----
+// Distinct from submitScore/fetchLeaderboard above: those keep one
+// best-ever row per (fingerprint, mode combo) for the main app's
+// personal-best leaderboard. A shared kiosk device reuses the same
+// fingerprint for every visitor who walks up to it, so that dedup-by-
+// fingerprint logic would make different kids overwrite each other's
+// scores. Kiosk submissions are plain inserts instead (every completed
+// run that opts in gets its own row), scoped to "today" by created_at
+// and tagged language: "kiosk" so they never mix with main-app rows.
+const KIOSK_LANGUAGE_TAG = "kiosk";
+
+const startOfTodayIso = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+};
+
+export const submitKioskScore = async ({ initials, wpm }) => {
+  if (!supabase) return null;
+
+  const { error } = await supabase.from("scores").insert({
+    user_name: initials,
+    wpm: Math.round(wpm),
+    accuracy: 100,
+    effective_wpm: Math.round(wpm),
+    language: KIOSK_LANGUAGE_TAG,
+    difficulty: "kiosk",
+    duration: 0,
+    number_addon: false,
+    symbol_addon: false,
+  });
+
+  if (error) {
+    console.error("Kiosk score submission error:", error);
+    return null;
+  }
+  return { result: "new" };
+};
+
+export const fetchTodayKioskLeaderboard = async (limit = 10) => {
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("scores")
+    .select("user_name, wpm")
+    .eq("language", KIOSK_LANGUAGE_TAG)
+    .gte("created_at", startOfTodayIso())
+    .order("wpm", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Kiosk leaderboard fetch error:", error);
+    return [];
+  }
+  return data;
+};
+
 export const fetchPlayerRank = async ({
   wpm,
   accuracy,

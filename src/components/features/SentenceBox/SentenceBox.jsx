@@ -26,7 +26,6 @@ import useSound from "use-sound";
 const SentenceBox = ({
   sentenceInputRef,
   handleInputFocus,
-  isFocusedMode,
   soundMode,
   soundType,
 }) => {
@@ -106,7 +105,8 @@ const SentenceBox = ({
     return sentencesGenerator(sentencesCountConstant, language);
   });
   // enable menu
-  const menuEnabled = !isFocusedMode || status === "finished";
+  // Menu is always shown (focus mode removed).
+  const menuEnabled = true;
 
   const sentences = useMemo(() => {
     return sentencesDict.map((e) => e.val);

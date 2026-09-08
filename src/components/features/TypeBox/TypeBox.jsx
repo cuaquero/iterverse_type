@@ -8,11 +8,8 @@ import { customWordsGenerator } from "../../../scripts/customWords";
 import { createRng, generateSeed } from "../../../scripts/seedUtils";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import UndoIcon from "@mui/icons-material/Undo";
-import ZoomInMapIcon from "@mui/icons-material/ZoomInMap";
-import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import IconButton from "../../utils/IconButton";
-import LeaderboardModal from "../Leaderboard/LeaderboardModal";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
@@ -51,15 +48,12 @@ import {
   SYMBOL_ADDON_KEY,
 } from "../../../constants/Constants";
 import { SOUND_MAP } from "../sound/sound";
-import SocialLinksModal from "../../common/SocialLinksModal";
 import EnglishModeWords from "../../common/EnglishModeWords";
 import ChineseModeWords from "../../common/ChineseModeWords";
 import { useLocale } from "../../../context/LocaleContext";
 
 const TypeBox = ({
   textInputRef,
-  isFocusedMode,
-  isUltraZenMode,
   soundMode,
   soundType,
   handleInputFocus,
@@ -68,8 +62,8 @@ const TypeBox = ({
   setSessionSeed,
   customWordsOverride,
   onClearCustomWords,
-  toggleUltraZenMode,
   onCreateWordList,
+  onEditWordList,
   hasActiveWordList,
   customWordLists,
   activeWordListId,
@@ -127,10 +121,6 @@ const TypeBox = ({
 
   // tab-enter restart dialog
   const [openRestart, setOpenRestart] = useState(false);
-
-  // Leaderboard modal moved out of FooterMenu — its trigger lives in the
-  // quick-tools strip above the type box now (more discoverable).
-  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 
   // Anchor for the custom-words quick-pick menu. Clicking the toolbar's
   // "custom words" icon opens a menu listing saved lists for one-click
@@ -239,8 +229,8 @@ const TypeBox = ({
   // set up game loop status state
   const [status, setStatus] = useState("waiting");
 
-  // enable menu
-  const menuEnabled = !isFocusedMode || status === "finished";
+  // Menu is always shown (focus mode removed).
+  const menuEnabled = true;
 
   // set up hidden input input val state
   const [currInput, setCurrInput] = useState("");
@@ -1315,18 +1305,6 @@ const TypeBox = ({
               >
                 |
               </span>
-              {toggleUltraZenMode && (
-                <IconButton onClick={toggleUltraZenMode}>
-                  <Tooltip title={t("ultra_zen_mode")}>
-                    <span
-                      className={isUltraZenMode ? "active-button" : "inactive-button"}
-                      style={{ display: "inline-flex", alignItems: "center" }}
-                    >
-                      <ZoomInMapIcon sx={{ fontSize: 16 }} />
-                    </span>
-                  </Tooltip>
-                </IconButton>
-              )}
               {effectiveLanguage === CHINESE_MODE && (
                 <IconButton
                   onClick={() => {
@@ -1353,16 +1331,6 @@ const TypeBox = ({
                   </Tooltip>
                 </IconButton>
               )}
-              <IconButton onClick={() => setLeaderboardOpen(true)}>
-                <Tooltip title={t("stats_tooltip")}>
-                  <span
-                    className="inactive-button"
-                    style={{ display: "inline-flex", alignItems: "center" }}
-                  >
-                    <LeaderboardIcon sx={{ fontSize: 16 }} />
-                  </span>
-                </Tooltip>
-              </IconButton>
             </Box>
           )}
         </Grid>
@@ -1411,7 +1379,6 @@ const TypeBox = ({
 
   return (
     <>
-      {/* <SocialLinksModal status={status} /> */}
       <div onClick={handleInputFocus}>
         <CapsLockSnackbar open={capsLocked}></CapsLockSnackbar>
         {effectiveLanguage === ENGLISH_MODE && (
@@ -1419,7 +1386,6 @@ const TypeBox = ({
             currentWords={currentWords}
             currWordIndex={currWordIndex}
             currCharIndex={currCharIndex}
-            isUltraZenMode={isUltraZenMode}
             startIndex={startIndex}
             status={status}
             wordSpanRefs={wordSpanRefs}
@@ -1437,7 +1403,6 @@ const TypeBox = ({
             currCharIndex={currCharIndex}
             wordsKey={wordsKey}
             chineseDisplayMode={chineseDisplayMode}
-            isUltraZenMode={isUltraZenMode}
             status={status}
             wordSpanRefs={wordSpanRefs}
             startIndex={startIndex}
@@ -1468,9 +1433,6 @@ const TypeBox = ({
             difficulty={difficulty}
             numberAddon={numberAddOn}
             symbolAddon={symbolAddOn}
-            sessionSeed={sessionSeed}
-            isCustomMode={!!customWordsOverride}
-            customListName={customWordsOverride?.listName}
           ></Stats>
           {status !== "finished" && renderResetButton()}
         </div>
@@ -1512,11 +1474,6 @@ const TypeBox = ({
             <span className="key-note">{t("to_exit")}</span>
           </DialogTitle>
         </Dialog>
-        <LeaderboardModal
-          open={leaderboardOpen}
-          onClose={() => setLeaderboardOpen(false)}
-          theme={theme}
-        />
         <Menu
           anchorEl={wordListMenuAnchor}
           open={wordListMenuOpen}
@@ -1605,22 +1562,20 @@ const TypeBox = ({
             </ListItemIcon>
             {t("custom_words_menu_new")}
           </MenuItem>
-          <MenuItem
-            onClick={() => {
-              closeWordListMenu();
-              // Logo listens for this and opens Profile on the Word Lists tab —
-              // gives users a direct path to rename/delete/import/export.
-              window.dispatchEvent(
-                new CustomEvent("eletypes-open-profile", { detail: { tab: "wordlists" } })
-              );
-            }}
-            sx={{ fontSize: 13, color: theme.text, fontFamily: theme.fontFamily }}
-          >
-            <ListItemIcon sx={{ minWidth: 24, color: theme.textTypeBox }}>
-              <SettingsIcon sx={{ fontSize: 16 }} />
-            </ListItemIcon>
-            {t("custom_words_menu_manage")}
-          </MenuItem>
+          {hasActiveWordList && onEditWordList && (
+            <MenuItem
+              onClick={() => {
+                closeWordListMenu();
+                onEditWordList(activeWordListId);
+              }}
+              sx={{ fontSize: 13, color: theme.text, fontFamily: theme.fontFamily }}
+            >
+              <ListItemIcon sx={{ minWidth: 24, color: theme.textTypeBox }}>
+                <SettingsIcon sx={{ fontSize: 16 }} />
+              </ListItemIcon>
+              {t("custom_words_menu_manage")}
+            </MenuItem>
+          )}
         </Menu>
       </div>
     </>
