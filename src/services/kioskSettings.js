@@ -1,4 +1,3 @@
-import LOCAL_HISTORY_SENTENCES from "../constants/LocalHistorySentences";
 import { ENGLISH_SENTENCES } from "../constants/SentencesCollection";
 import { COMMON_WORDS } from "../constants/WordsMostCommon";
 
@@ -45,9 +44,12 @@ export const saveKioskSettings = (settings) => {
 };
 
 // Builds the active { text, topic } pool for sentence mode from whichever
-// sources are checked. Falls back to the full local-history pack if nothing
-// is selected, so a misconfigured kiosk never shows an empty screen.
-export const buildSentencePool = (sources) => {
+// sources are checked. `allSentences` is the live content-sources list
+// (src/services/contentAdmin.js's fetchContentSources) rather than a
+// static import, so an instructor's /admin edits show up here without a
+// code change. Falls back to the full local-history pack if nothing is
+// selected, so a misconfigured kiosk never shows an empty screen.
+export const buildSentencePool = (sources, allSentences) => {
   const pool = [];
   const selectedTopics = SOURCE_OPTIONS.filter(
     (o) => sources.includes(o.key) && o.topic
@@ -55,7 +57,7 @@ export const buildSentencePool = (sources) => {
 
   if (selectedTopics.length > 0) {
     pool.push(
-      ...LOCAL_HISTORY_SENTENCES.filter((s) => selectedTopics.includes(s.topic))
+      ...allSentences.filter((s) => selectedTopics.includes(s.topic))
     );
   }
   if (sources.includes("general_sentences")) {
@@ -63,7 +65,7 @@ export const buildSentencePool = (sources) => {
       ...Object.values(ENGLISH_SENTENCES).map((e) => ({ text: e.val, topic: null }))
     );
   }
-  return pool.length > 0 ? pool : LOCAL_HISTORY_SENTENCES;
+  return pool.length > 0 ? pool : allSentences;
 };
 
 const WORD_CHUNK_LENGTH = 10;

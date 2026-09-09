@@ -11,11 +11,13 @@
  * who's signed in, and functions/admin/whoami.js just surfaces that email
  * for display.
  *
- * There's still no backend for the actual content (see CLAUDE.md) — edits
- * are stored as a per-device localStorage override on top of the shipped
- * JSON (src/services/contentAdmin.js), the same way Kiosk's own settings
- * and leaderboard work. Access controls *who can reach this page*; it
- * doesn't turn the content store into a shared one.
+ * Content itself lives in a shared Cloudflare D1 database
+ * (src/services/contentAdmin.js talks to functions/api/content-sources) —
+ * an edit here applies everywhere immediately, no per-device state and no
+ * code change or deploy needed. Access controls *who can reach this
+ * page*; the API layer enforces the same identity independently for
+ * writes (functions/api/content-sources/_middleware.js), since a request
+ * there doesn't have to come from this page.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -25,12 +27,10 @@ import "../assets/iterverse/fonts.css";
 import btechMark from "../assets/iterverse/btech-mark.png";
 import { checkEntryText, MIN_LENGTH, MAX_LENGTH } from "../scripts/contentValidation";
 import {
-  getEffectiveSentences,
+  fetchContentSources,
   addSentence,
   editSentence,
   deleteSentence,
-  hasOverrides,
-  resetOverrides,
 } from "../services/contentAdmin";
 
 const AdminGlobalStyle = createGlobalStyle`
@@ -330,6 +330,15 @@ const CharCount = styled.div`
   color: ${({ $overLimit }) => ($overLimit ? "var(--color-danger)" : "var(--text-muted)")};
 `;
 
+const SaveError = styled.div`
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+  background: var(--surface-card);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+`;
+
 const ProblemList = styled.ul`
   margin: 0;
   padding-left: var(--space-5);
@@ -349,13 +358,19 @@ const AdminPage = () => {
       .catch(() => {});
   }, []);
 
-  const [sentences, setSentences] = useState(() => getEffectiveSentences());
+  const [sentences, setSentences] = useState(null); // null = still loading
   const [editingId, setEditingId] = useState(null); // id being edited, or "new"
   const [draft, setDraft] = useState(emptyDraft);
+  const [saveError, setSaveError] = useState(null);
 
-  const refresh = () => setSentences(getEffectiveSentences());
+  const refresh = () => fetchContentSources().then(setSentences);
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const topics = useMemo(() => {
+    if (!sentences) return [];
     const grouped = new Map();
     sentences.forEach((s) => {
       if (!grouped.has(s.topic)) grouped.set(s.topic, []);
@@ -398,30 +413,30 @@ const AdminPage = () => {
     return checkEntryText(draft.text, draft.topic);
   }, [editingId, draft]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (problems.length > 0) return;
-    if (editingId === "new") {
-      addSentence(draft.topic.trim(), draft.text.trim());
-    } else {
-      editSentence(editingId, draft.topic.trim(), draft.text.trim());
+    setSaveError(null);
+    try {
+      if (editingId === "new") {
+        await addSentence(draft.topic.trim(), draft.text.trim());
+      } else {
+        await editSentence(editingId, draft.topic.trim(), draft.text.trim());
+      }
+      cancelEdit();
+      await refresh();
+    } catch (err) {
+      setSaveError(err.message || "Save failed");
     }
-    cancelEdit();
-    refresh();
   };
 
-  const handleDelete = (id) => {
-    deleteSentence(id);
-    refresh();
-  };
-
-  const handleResetAll = () => {
-    if (!window.confirm("Revert every change on this device back to the shipped content pack?")) {
-      return;
+  const handleDelete = async (id) => {
+    try {
+      await deleteSentence(id);
+      await refresh();
+    } catch (err) {
+      setSaveError(err.message || "Delete failed");
     }
-    resetOverrides();
-    cancelEdit();
-    refresh();
   };
 
   return (
@@ -455,66 +470,69 @@ const AdminPage = () => {
       </Banner>
 
       <Main>
-        <EditorWrap>
-          <EditorHeaderRow>
-            <div>
-              <Title>Content Sources</Title>
-              <Subtitle>
-                {sentences.length} sentences across {topics.length} topics — changes apply
-                immediately in Kiosk and Local History mode, on this device only.
-              </Subtitle>
-            </div>
-            <HeaderActions>
-              <GhostButton onClick={startNew}>Add sentence</GhostButton>
-              {hasOverrides() && (
-                <GhostButton onClick={handleResetAll}>Reset to shipped defaults</GhostButton>
-              )}
-            </HeaderActions>
-          </EditorHeaderRow>
+        {sentences == null ? (
+          <Subtitle>Loading content sources…</Subtitle>
+        ) : (
+          <EditorWrap>
+            <EditorHeaderRow>
+              <div>
+                <Title>Content Sources</Title>
+                <Subtitle>
+                  {sentences.length} sentences across {topics.length} topics — changes apply
+                  everywhere immediately, no deploy needed.
+                </Subtitle>
+              </div>
+              <HeaderActions>
+                <GhostButton onClick={startNew}>Add sentence</GhostButton>
+              </HeaderActions>
+            </EditorHeaderRow>
 
-          <Notice>
-            Edits are saved to this browser only — there's no shared backend, so they don't
-            appear on other kiosks or devices. See LOCAL_HISTORY_GUIDE.md for what makes good
-            content (factual, family-friendly, 40–140 characters).
-          </Notice>
+            <Notice>
+              Shared across every Kiosk and Local History mode instance — see
+              LOCAL_HISTORY_GUIDE.md for what makes good content (factual, family-friendly,
+              40–140 characters).
+            </Notice>
 
-          {editingId === "new" && (
-            <EntryForm
-              draft={draft}
-              setDraft={setDraft}
-              problems={problems}
-              onSave={handleSave}
-              onCancel={cancelEdit}
-              isNew
-            />
-          )}
+            {saveError && <SaveError>{saveError}</SaveError>}
 
-          {topics.map(([topic, entries]) => (
-            <TopicSection key={topic}>
-              <TopicHeading>{topic}</TopicHeading>
-              {entries.map((entry) =>
-                editingId === entry.id ? (
-                  <EntryForm
-                    key={entry.id}
-                    draft={draft}
-                    setDraft={setDraft}
-                    problems={problems}
-                    onSave={handleSave}
-                    onCancel={cancelEdit}
-                  />
-                ) : (
-                  <EntryRow key={entry.id}>
-                    <EntryText>{entry.text}</EntryText>
-                    <EntryActions>
-                      <SmallButton onClick={() => startEdit(entry)}>Edit</SmallButton>
-                      <DangerButton onClick={() => handleDelete(entry.id)}>Delete</DangerButton>
-                    </EntryActions>
-                  </EntryRow>
-                )
-              )}
-            </TopicSection>
-          ))}
-        </EditorWrap>
+            {editingId === "new" && (
+              <EntryForm
+                draft={draft}
+                setDraft={setDraft}
+                problems={problems}
+                onSave={handleSave}
+                onCancel={cancelEdit}
+                isNew
+              />
+            )}
+
+            {topics.map(([topic, entries]) => (
+              <TopicSection key={topic}>
+                <TopicHeading>{topic}</TopicHeading>
+                {entries.map((entry) =>
+                  editingId === entry.id ? (
+                    <EntryForm
+                      key={entry.id}
+                      draft={draft}
+                      setDraft={setDraft}
+                      problems={problems}
+                      onSave={handleSave}
+                      onCancel={cancelEdit}
+                    />
+                  ) : (
+                    <EntryRow key={entry.id}>
+                      <EntryText>{entry.text}</EntryText>
+                      <EntryActions>
+                        <SmallButton onClick={() => startEdit(entry)}>Edit</SmallButton>
+                        <DangerButton onClick={() => handleDelete(entry.id)}>Delete</DangerButton>
+                      </EntryActions>
+                    </EntryRow>
+                  )
+                )}
+              </TopicSection>
+            ))}
+          </EditorWrap>
+        )}
       </Main>
     </Screen>
   );

@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { sentencesGenerator } from "../../../scripts/sentencesGenerator";
 import { localHistorySentencesGenerator } from "../../../scripts/localHistorySentencesGenerator";
+import { fetchContentSources } from "../../../services/contentAdmin";
 import { Stack } from "@mui/material";
 import { Grid } from "@mui/material";
 import { Box } from "@mui/system";
@@ -31,8 +32,25 @@ const SentenceBox = ({
 }) => {
   const { t } = useLocale();
   const [play] = useSound(SOUND_MAP[soundType], { volume: 0.5 });
-  const generateSentences =
-    contentSource === "local" ? localHistorySentencesGenerator : sentencesGenerator;
+
+  // Local History mode's pool comes from the shared content-sources API
+  // (src/services/contentAdmin.js) rather than a static import, so an
+  // instructor's /admin edits show up here with no code change. General
+  // mode's sentencesGenerator is unaffected - it still uses its own
+  // built-in bank synchronously.
+  const [localSentences, setLocalSentences] = useState(null);
+  useEffect(() => {
+    if (contentSource === "local") {
+      fetchContentSources().then(setLocalSentences);
+    }
+  }, [contentSource]);
+
+  const generateSentences = (count) => {
+    if (contentSource === "local") {
+      return localSentences ? localHistorySentencesGenerator(count, localSentences) : [];
+    }
+    return sentencesGenerator(count);
+  };
 
   // local persist timer
   const [sentencesCountConstant, setSentencesCountConstant] =
@@ -93,6 +111,18 @@ const SentenceBox = ({
   const [sentencesDict, setSentencesDict] = useState(() => {
     return generateSentences(sentencesCountConstant);
   });
+
+  // Local History mode's initial sentencesDict (above) runs before
+  // localSentences has loaded, so it starts empty - swap in the real pool
+  // as soon as the fetch resolves. Only fires for that one transition
+  // (loading -> loaded), not on every render.
+  useEffect(() => {
+    if (contentSource === "local" && localSentences) {
+      setSentencesDict(localHistorySentencesGenerator(sentencesCountConstant, localSentences));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSentences]);
+
   // enable menu
   // Menu is always shown (focus mode removed).
   const menuEnabled = true;
@@ -258,6 +288,22 @@ const SentenceBox = ({
       setCurrInput(value);
     }
   };
+
+  // Guards on sentences.length, not just !localSentences: there's a render
+  // in between "the fetch resolved" and "the effect that regenerates
+  // sentencesDict from it has actually run" where localSentences is
+  // truthy but sentencesDict (and therefore sentences/currSentence) is
+  // still the empty initial value - checking the raw fetch flag alone let
+  // that render through and crashed on currSentence.split(...).
+  if (contentSource === "local" && sentences.length === 0) {
+    return (
+      <div className="type-box-sentence">
+        <div className="sentence-display-field notranslate" translate="no">
+          Loading…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div onClick={handleInputFocus}>

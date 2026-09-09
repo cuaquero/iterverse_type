@@ -22,6 +22,8 @@ import { INITIALS_BLOCKLIST } from "../constants/bannedWords";
 import TapMode from "../components/features/Kiosk/TapMode";
 import { loadKioskSettings, buildSentencePool, buildWordPool } from "../services/kioskSettings";
 import { playTimeUpChime } from "../services/chime";
+import { fetchContentSources } from "../services/contentAdmin";
+import { LOCAL_HISTORY_SENTENCES } from "../constants/LocalHistorySentences";
 
 const LEADERBOARD_REFRESH_MS = 20000;
 const INITIALS_LENGTH = 3;
@@ -390,9 +392,18 @@ function buildShuffledOrder(count, avoidFirst) {
 const KioskPage = () => {
   const [viewMode, setViewMode] = useState("typing");
   const [settings, setSettings] = useState(() => loadKioskSettings());
+  // Starts with the shipped pack so there's never an empty pool while the
+  // live fetch is in flight, then swaps in the shared content-sources data
+  // (src/services/contentAdmin.js) once it resolves — an instructor's
+  // /admin edits show up here with no code change or deploy.
+  const [allSentences, setAllSentences] = useState(LOCAL_HISTORY_SENTENCES);
+  const isFirstContentLoadRef = useRef(true);
+  useEffect(() => {
+    fetchContentSources().then(setAllSentences);
+  }, []);
   const sentences = useMemo(
-    () => (settings.mode === "word" ? buildWordPool() : buildSentencePool(settings.sources)),
-    [settings]
+    () => (settings.mode === "word" ? buildWordPool() : buildSentencePool(settings.sources, allSentences)),
+    [settings, allSentences]
   );
   const [order, setOrder] = useState(() => buildShuffledOrder(sentences.length));
   const [pointer, setPointer] = useState(0);
@@ -414,6 +425,23 @@ const KioskPage = () => {
   const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
+
+  // order/pointer are sized against whatever `sentences` was at mount,
+  // which is the static fallback (see allSentences above) - once the live
+  // fetch resolves and swaps in the real pool, reshuffle against its
+  // actual length so `order` never points past the end of a shorter (or
+  // into a longer) list. Skips its own first run, which just re-fires for
+  // the initial synchronous value and would otherwise flash a different
+  // sentence right after mount for no reason.
+  useEffect(() => {
+    if (isFirstContentLoadRef.current) {
+      isFirstContentLoadRef.current = false;
+      return;
+    }
+    setOrder(buildShuffledOrder(sentences.length));
+    setPointer(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSentences]);
 
   // Pulse pacing (see Customize Kiosk Session) highlights the word the
   // visitor is currently typing instead of showing the caret bar — same
