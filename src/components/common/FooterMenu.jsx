@@ -14,16 +14,13 @@ import {
 import KeyboardAltOutlinedIcon from "@mui/icons-material/KeyboardAltOutlined";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import { useLocale } from "../../context/LocaleContext";
-import { buildGroupedOptions, findOptionForTheme } from "../../style/customThemes";
 
 const FooterMenu = ({
-  theme,
   soundMode,
   toggleSoundMode,
   soundOptions,
   soundType,
   handleSoundTypeChange,
-  handleThemeChange,
   gameMode,
   handleGameModeChange,
   isTrainerMode,
@@ -31,8 +28,6 @@ const FooterMenu = ({
 }) => {
   const { t } = useLocale();
   const isSpecialMode = isTrainerMode;
-  const groupedThemeOptions = buildGroupedOptions(t);
-  const themeOptionValue = findOptionForTheme(groupedThemeOptions, theme);
 
   const activeCls = (on) => (on ? "nav-item-active" : "nav-item");
   const modeCls = (currMode, buttonMode) => {
@@ -97,15 +92,6 @@ const FooterMenu = ({
         <div className="nav-group">
           <span className="nav-group-label">{t("nav_settings")}</span>
           <div className="nav-group-items">
-            <Select
-              classNamePrefix="Select"
-              value={themeOptionValue}
-              options={groupedThemeOptions}
-              isSearchable={false}
-              isSelected={false}
-              onChange={handleThemeChange}
-              menuPlacement="top"
-            />
             <IconButton size="small" onClick={toggleSoundMode}>
               <Tooltip title={t("sound_mode_tooltip")}>
                 <span className={activeCls(soundMode)}>

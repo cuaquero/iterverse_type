@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { ThemeProvider } from "styled-components";
 import { defaultTheme } from "./style/theme";
-import { resolveTheme } from "./style/customThemes";
+import "./assets/iterverse/fonts.css";
 import {
   parseCustomWordsText,
   resolveActiveCustomList,
@@ -24,7 +24,6 @@ import {
   DEFAULT_SOUND_TYPE,
   DEFAULT_SOUND_TYPE_KEY,
 } from "./components/features/sound/sound";
-import DynamicBackground from "./components/common/DynamicBackground";
 import TypeBox from "./components/features/TypeBox/TypeBox";
 import SentenceBox from "./components/features/SentenceBox/SentenceBox";
 import { generateSeed } from "./scripts/seedUtils";
@@ -35,16 +34,7 @@ function App() {
   // Every session gets a fresh seed for reproducible word/sentence generation.
   const [sessionSeed, setSessionSeed] = useState(() => generateSeed());
 
-  // Active theme, resolved against the built-in theme list on load.
-  const [theme, setTheme] = useState(() => {
-    const raw = window.localStorage.getItem("theme");
-    if (raw == null) return defaultTheme;
-    try {
-      return resolveTheme(JSON.parse(raw));
-    } catch {
-      return defaultTheme;
-    }
-  });
+  const theme = defaultTheme;
 
   // Custom word lists (blogger-friendly: define your own demo words so the test
   // doesn't surface random vocab during a recording).
@@ -104,11 +94,6 @@ function App() {
   const isWordGameMode = gameMode === GAME_MODE_DEFAULT && !isTrainerMode;
   const isSentenceGameMode = gameMode === GAME_MODE_SENTENCE && !isTrainerMode;
 
-  const handleThemeChange = (e) => {
-    window.localStorage.setItem("theme", JSON.stringify(e.value));
-    setTheme(e.value);
-  };
-
   const handleSoundTypeChange = (e) => {
     setSoundType(e.label);
   };
@@ -152,7 +137,6 @@ function App() {
     <LocaleProvider>
     <ThemeProvider theme={theme}>
       <>
-        <DynamicBackground theme={theme}></DynamicBackground>
         <div className="canvas">
           <GlobalStyles />
           <Logo></Logo>
@@ -197,13 +181,11 @@ function App() {
           </Suspense>
           <div className="bottomBar">
             <FooterMenu
-              theme={theme}
               soundMode={soundMode}
               toggleSoundMode={toggleSoundMode}
               soundOptions={soundOptions}
               soundType={soundType}
               handleSoundTypeChange={handleSoundTypeChange}
-              handleThemeChange={handleThemeChange}
               gameMode={gameMode}
               handleGameModeChange={handleGameModeChange}
               isTrainerMode={isTrainerMode}

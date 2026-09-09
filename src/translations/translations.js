@@ -46,9 +46,6 @@ export const translations = {
     // Caps Lock
     caps_locked: "Caps Locked",
 
-    // Custom Theme (built-in picker only — custom theme creation was removed)
-    theme_group_builtin: "Built-in",
-
     // Custom Words
     custom_words_editor_title: "Custom Word List",
     custom_words_editor_subtitle:

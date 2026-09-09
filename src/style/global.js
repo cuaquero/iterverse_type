@@ -126,7 +126,7 @@ line-height: 1;
 }
 .logo-wordmark-iter {
 font-weight: 700;
-color: #d22030;
+color: #ffffff;
 }
 .logo-wordmark-verse {
 font-weight: 300;
@@ -134,6 +134,7 @@ color: ${({ theme }) => theme.textTypeBox};
 }
 .logo-product-name {
 font-weight: 400;
+letter-spacing: normal;
 }
 .logo-gant {
 font-size: 16px;
@@ -141,11 +142,6 @@ font-weight: 300;
 color: ${({ theme }) => theme.textTypeBox};
 letter-spacing: 1px;
 opacity: 0.6;
-}
-.logo-icon {
-font-size: 20px;
-margin-left: 4px;
-opacity: 0.7;
 }
 @media (max-width: 600px) {
 .logo-row {

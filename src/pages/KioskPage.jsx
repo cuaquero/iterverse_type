@@ -16,7 +16,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styled, { createGlobalStyle } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
-import btechLogo from "../assets/iterverse/logo-horizontal.png";
 import LOCAL_HISTORY_SENTENCES from "../constants/LocalHistorySentences";
 import { submitKioskScore, fetchTodayKioskLeaderboard } from "../services/leaderboard";
 import KidsMode from "../components/features/Kiosk/KidsMode";
@@ -27,10 +26,25 @@ const LEADERBOARD_REFRESH_MS = 20000;
 const INITIALS_LENGTH = 3;
 const BANNER_HEIGHT = "64px";
 
+// Iterverse Type is dark-only (one shared BTECH-branded identity across
+// the regular typing test and Kiosk — see src/style/theme.js). tokens.css
+// is a vendored, byte-identical copy from iterverse_labs's design-system,
+// so the dark palette is layered on here instead of edited into it —
+// same values src/style/theme.js's single theme uses.
 const KioskGlobalStyle = createGlobalStyle`
   html, body, #root {
     height: 100%;
     margin: 0;
+  }
+
+  :root {
+    --surface-page: #232526;
+    --surface-card: #36393b;
+    --surface-subtle: #3a3a3e;
+    --text-body: #f7f7f8;
+    --text-muted: #8a8a90;
+    --border-subtle: rgba(255, 255, 255, 0.12);
+    --border-default: rgba(255, 255, 255, 0.24);
   }
 `;
 
@@ -55,8 +69,6 @@ const Banner = styled.div`
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
   padding: var(--space-2) var(--space-4);
-  background: var(--surface-card);
-  border-bottom: 1px solid var(--border-subtle);
 
   @media (max-width: 480px) {
     padding: var(--space-2) var(--space-3);
@@ -66,42 +78,31 @@ const Banner = styled.div`
 const BrandGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
 `;
 
 const Wordmark = styled.span`
-  font-size: var(--fs-lg);
+  font-size: 20px;
   line-height: 1;
   letter-spacing: -0.015em;
+  opacity: 0.9;
   strong {
     font-weight: var(--fw-bold);
-    color: var(--btech-red);
+    color: #ffffff;
   }
   em {
     font-style: normal;
     font-weight: 300;
-    color: var(--neutral-600);
+    color: var(--text-muted);
   }
 `;
 
-const Divider = styled.div`
-  width: 1px;
-  align-self: stretch;
-  margin: var(--space-2) 0;
-  background: var(--border-default);
-
-  @media (max-width: 480px) {
-    display: none;
-  }
-`;
-
-const BtechLogo = styled.img`
-  height: 28px;
-  width: auto;
-
-  @media (max-width: 480px) {
-    display: none;
-  }
+const ProductName = styled.span`
+  font-size: 22px;
+  font-weight: 400;
+  color: #ffffff;
+  opacity: 0.9;
+  margin-left: 4px;
 `;
 
 const ExitLink = styled.a`
@@ -466,7 +467,7 @@ const KioskPage = () => {
       <KioskGlobalStyle />
       <Banner>
         <BrandGroup>
-          <svg viewBox="0 0 92 92" width="28" height="28" aria-hidden="true">
+          <svg viewBox="0 0 92 92" width="20" height="20" aria-hidden="true">
             <polygon
               points="30,18 62,18 78,46 62,74 30,74 14,46"
               fill="none"
@@ -474,14 +475,13 @@ const KioskPage = () => {
               strokeWidth="11"
               strokeLinejoin="miter"
             />
-            <rect x="41.5" y="31" width="9" height="30" fill="var(--btech-gray)" />
+            <rect x="41.5" y="31" width="9" height="30" fill="currentColor" />
           </svg>
           <Wordmark>
             <strong>iter</strong>
             <em>verse</em>
           </Wordmark>
-          <Divider />
-          <BtechLogo src={btechLogo} alt="Bridgerland Technical College" />
+          <ProductName>Type</ProductName>
         </BrandGroup>
         <BannerActions>
           <ModeToggle

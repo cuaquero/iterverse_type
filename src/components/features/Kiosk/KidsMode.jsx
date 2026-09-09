@@ -56,7 +56,7 @@ const Wrap = styled.div`
 const Timer = styled.div`
   font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
-  color: var(--btech-gray);
+  color: var(--text-body);
   font-variant-numeric: tabular-nums;
 `;
 
@@ -81,7 +81,7 @@ const keyBackground = ({ $target, $flash }) => {
   if ($flash === "correct") return "var(--color-success)";
   if ($flash === "wrong") return "var(--color-danger)";
   if ($target) return "var(--color-brand)";
-  return "var(--surface-card)";
+  return "var(--neutral-700)";
 };
 
 const Key = styled.div`
@@ -122,7 +122,7 @@ const EndCard = styled.div`
 const EndMessage = styled.div`
   font-size: clamp(1.75rem, 4vw, 2.75rem);
   font-weight: var(--fw-bold);
-  color: var(--btech-gray);
+  color: var(--text-body);
 `;
 
 const EndSub = styled.div`

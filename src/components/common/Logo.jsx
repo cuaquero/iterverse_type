@@ -1,5 +1,4 @@
 import React from "react";
-import KeyboardAltIcon from "@mui/icons-material/KeyboardAlt";
 
 const Logo = () => {
   return (
@@ -23,8 +22,7 @@ const Logo = () => {
               <span className="logo-wordmark-iter">iter</span>
               <span className="logo-wordmark-verse">verse</span>
             </span>{" "}
-            <span className="logo-accent logo-product-name">Type</span>{" "}
-            <KeyboardAltIcon className="logo-icon" />
+            <span className="logo-accent logo-product-name">Type</span>
           </h1>
         </div>
       </div>
