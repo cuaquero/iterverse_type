@@ -57,13 +57,16 @@ removed. See git history if you need to resurrect any of it.
   [`src/constants/LOCAL_HISTORY_GUIDE.md`](src/constants/LOCAL_HISTORY_GUIDE.md)
   for how to add more sentences and how new content gets checked before
   it ships. Includes a same-day, arcade-style leaderboard (3-letter
-  initials, resets daily) shown right on the kiosk screen.
+  initials, resets daily) shown right on the kiosk screen. Obvious
+  profanity is rejected outright, and long-pressing "Today's Top Typists"
+  reveals a delete button per row for anything that slips past.
 - **Tap Mode** (toggle from the Kiosk banner): repurposes the QWERTY
-  trainer's press-the-highlighted-key mechanic into a simple, fixed-length
-  round (45s) for visitors who'd rather not read sentences (young kids,
-  students with special needs, or anyone just passing by): no sentences to
-  read, no leaderboard, and it always ends on an encouraging note
-  regardless of how it went.
+  trainer's press-the-highlighted-key mechanic into a simple round
+  (staff-configurable 15s/30s/60s from Customize Kiosk Session) for
+  visitors who'd rather not read sentences (young kids, students with
+  special needs, or anyone just passing by): no sentences to read, no
+  leaderboard, a shower of letters on every correct press, and it always
+  ends on an encouraging note regardless of how it went.
 
 Plus: a single fixed dark theme built on BTECH's own brand tokens (no
 theme picker), typing sounds, and PWA install support.
