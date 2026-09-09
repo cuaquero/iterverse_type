@@ -21,6 +21,14 @@ export default defineConfig({
     workbox: {
       globPatterns: ["**/*.{js,css,html,png,wav,json}"],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      // The PWA's offline navigation fallback (serve cached index.html for
+      // any unmatched navigation) runs entirely client-side in the service
+      // worker, before a request ever reaches the network - which means it
+      // bypasses Cloudflare Access's edge-level gate on /admin/* entirely.
+      // Exclude /admin so those navigations always go to the network and
+      // actually hit Access, at the cost of /admin having no offline
+      // support (acceptable - it's a staff tool, not the kiosk).
+      navigateFallbackDenylist: [/^\/admin/],
     },
   })],
   server: {
