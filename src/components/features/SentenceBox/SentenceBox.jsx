@@ -1,6 +1,7 @@
 import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { sentencesGenerator } from "../../../scripts/sentencesGenerator";
+import { localHistorySentencesGenerator } from "../../../scripts/localHistorySentencesGenerator";
 import { Stack } from "@mui/material";
 import { Grid } from "@mui/material";
 import { Box } from "@mui/system";
@@ -26,9 +27,12 @@ const SentenceBox = ({
   handleInputFocus,
   soundMode,
   soundType,
+  contentSource = "general",
 }) => {
   const { t } = useLocale();
   const [play] = useSound(SOUND_MAP[soundType], { volume: 0.5 });
+  const generateSentences =
+    contentSource === "local" ? localHistorySentencesGenerator : sentencesGenerator;
 
   // local persist timer
   const [sentencesCountConstant, setSentencesCountConstant] =
@@ -87,7 +91,7 @@ const SentenceBox = ({
 
   // set up sentences
   const [sentencesDict, setSentencesDict] = useState(() => {
-    return sentencesGenerator(sentencesCountConstant);
+    return generateSentences(sentencesCountConstant);
   });
   // enable menu
   // Menu is always shown (focus mode removed).
@@ -114,7 +118,7 @@ const SentenceBox = ({
     setStatus("watiting");
     setSentencesCountConstant(newSentencesCountConstant);
     if (!isRedo) {
-      setSentencesDict(sentencesGenerator(newSentencesCountConstant));
+      setSentencesDict(generateSentences(newSentencesCountConstant));
     }
     setTimeRunning(false);
     setTime(0);

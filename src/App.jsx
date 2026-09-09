@@ -1,21 +1,16 @@
-import React, { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
+import React, { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { ThemeProvider } from "styled-components";
 import { defaultTheme } from "./style/theme";
 import "./assets/iterverse/fonts.css";
-import {
-  parseCustomWordsText,
-  resolveActiveCustomList,
-} from "./scripts/customWords";
 import { GlobalStyles } from "./style/global";
 import { LocaleProvider } from "./context/LocaleContext";
 import Logo from "./components/common/Logo";
 import FooterMenu from "./components/common/FooterMenu";
-import CustomWordsEditor from "./components/features/CustomWords/CustomWordsEditor";
-import useCustomWordsEditor from "./hooks/useCustomWordsEditor";
 import {
   GAME_MODE,
   GAME_MODE_DEFAULT,
   GAME_MODE_SENTENCE,
+  GAME_MODE_LOCAL,
 } from "./constants/Constants";
 import useLocalPersistState from "./hooks/useLocalPersistState";
 import {
@@ -35,40 +30,6 @@ function App() {
   const [sessionSeed, setSessionSeed] = useState(() => generateSeed());
 
   const theme = defaultTheme;
-
-  // Custom word lists (blogger-friendly: define your own demo words so the test
-  // doesn't surface random vocab during a recording).
-  const {
-    customWordLists,
-    activeListId,
-    editorOpen: wordsEditorOpen,
-    editorMode: wordsEditorMode,
-    draft: wordsDraft,
-    openEditorForNew: openWordsEditorForNew,
-    openEditorForId: openWordsEditorForId,
-    activateList: activateWordsList,
-    deactivateList: deactivateWordsList,
-    handleEditorChange: handleWordsEditorChange,
-    handleEditorSave: handleWordsEditorSave,
-    handleEditorCancel: handleWordsEditorCancel,
-    handleEditorDelete: handleWordsEditorDelete,
-  } = useCustomWordsEditor();
-
-  const activeCustomList = useMemo(
-    () => resolveActiveCustomList(customWordLists, activeListId),
-    [customWordLists, activeListId]
-  );
-
-  const customWordsOverride = useMemo(() => {
-    if (!activeCustomList) return null;
-    const parsed = parseCustomWordsText(activeCustomList);
-    if (parsed.length === 0) return null;
-    return {
-      language: activeCustomList.language,
-      parsed,
-      listName: activeCustomList.name,
-    };
-  }, [activeCustomList]);
 
   // local persist game mode setting
   const [soundMode, setSoundMode] = useLocalPersistState(false, SOUND_MODE);
@@ -93,6 +54,7 @@ function App() {
 
   const isWordGameMode = gameMode === GAME_MODE_DEFAULT && !isTrainerMode;
   const isSentenceGameMode = gameMode === GAME_MODE_SENTENCE && !isTrainerMode;
+  const isLocalGameMode = gameMode === GAME_MODE_LOCAL && !isTrainerMode;
 
   const handleSoundTypeChange = (e) => {
     setSoundType(e.label);
@@ -126,12 +88,12 @@ function App() {
       focusTextInput();
       return;
     }
-    if (isSentenceGameMode) {
+    if (isSentenceGameMode || isLocalGameMode) {
       focusSentenceInput();
       return;
     }
     return;
-  }, [theme, isWordGameMode, isSentenceGameMode, soundMode, soundType]);
+  }, [theme, isWordGameMode, isSentenceGameMode, isLocalGameMode, soundMode, soundType]);
 
   return (
     <LocaleProvider>
@@ -146,20 +108,9 @@ function App() {
               soundMode={soundMode}
               theme={theme}
               soundType={soundType}
-              // Re-mount TypeBox when the active custom list changes so it
-              // re-initialises wordsDict from the new source on first render.
-              key={`type-box-${activeListId || "default"}`}
               handleInputFocus={() => focusTextInput()}
               sessionSeed={sessionSeed}
               setSessionSeed={setSessionSeed}
-              customWordsOverride={customWordsOverride}
-              onClearCustomWords={deactivateWordsList}
-              onCreateWordList={openWordsEditorForNew}
-              onEditWordList={openWordsEditorForId}
-              hasActiveWordList={!!activeListId}
-              customWordLists={customWordLists}
-              activeWordListId={activeListId}
-              onActivateWordList={activateWordsList}
             ></TypeBox>
           )}
           {isSentenceGameMode && (
@@ -168,6 +119,16 @@ function App() {
               soundMode={soundMode}
               soundType={soundType}
               key="sentence-box"
+              handleInputFocus={() => focusSentenceInput()}
+            ></SentenceBox>
+          )}
+          {isLocalGameMode && (
+            <SentenceBox
+              sentenceInputRef={sentenceInputRef}
+              soundMode={soundMode}
+              soundType={soundType}
+              key="local-history-box"
+              contentSource="local"
               handleInputFocus={() => focusSentenceInput()}
             ></SentenceBox>
           )}
@@ -192,18 +153,6 @@ function App() {
               toggleTrainerMode={toggleTrainerMode}
             ></FooterMenu>
           </div>
-          <CustomWordsEditor
-            open={wordsEditorOpen}
-            draft={wordsDraft}
-            onChange={handleWordsEditorChange}
-            onSave={handleWordsEditorSave}
-            onCancel={handleWordsEditorCancel}
-            onDelete={handleWordsEditorDelete}
-            isExisting={wordsEditorMode === "edit"}
-            existingNames={customWordLists
-              .filter((l) => wordsEditorMode !== "edit" || l.id !== wordsDraft?.id)
-              .map((l) => l.name)}
-          />
         </div>
       </>
     </ThemeProvider>

@@ -1,24 +1,13 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import useSound from "use-sound";
 import { wordsGenerator } from "../../../scripts/wordsGenerator";
-import { customWordsGenerator } from "../../../scripts/customWords";
 import { createRng, generateSeed } from "../../../scripts/seedUtils";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import UndoIcon from "@mui/icons-material/Undo";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import IconButton from "../../utils/IconButton";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import Divider from "@mui/material/Divider";
-import CheckIcon from "@mui/icons-material/Check";
-import AddIcon from "@mui/icons-material/Add";
-import ClearIcon from "@mui/icons-material/Clear";
-import ShuffleIcon from "@mui/icons-material/Shuffle";
-import SettingsIcon from "@mui/icons-material/Settings";
 import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
 import useLocalPersistState from "../../../hooks/useLocalPersistState";
 import CapsLockSnackbar from "../CapsLockSnackbar";
@@ -54,14 +43,6 @@ const TypeBox = ({
   theme,
   sessionSeed,
   setSessionSeed,
-  customWordsOverride,
-  onClearCustomWords,
-  onCreateWordList,
-  onEditWordList,
-  hasActiveWordList,
-  customWordLists,
-  activeWordListId,
-  onActivateWordList,
 }) => {
   const { t } = useLocale();
   const [play] = useSound(SOUND_MAP[soundType], { volume: 0.5 });
@@ -103,15 +84,6 @@ const TypeBox = ({
   // tab-enter restart dialog
   const [openRestart, setOpenRestart] = useState(false);
 
-  // Anchor for the custom-words quick-pick menu. Clicking the toolbar's
-  // "custom words" icon opens a menu listing saved lists for one-click
-  // activation, plus shortcuts to create / clear. Beats forcing the user to
-  // dig through Profile → Word Lists every time.
-  const [wordListMenuAnchor, setWordListMenuAnchor] = useState(null);
-  const wordListMenuOpen = Boolean(wordListMenuAnchor);
-  const openWordListMenu = (e) => setWordListMenuAnchor(e.currentTarget);
-  const closeWordListMenu = () => setWordListMenuAnchor(null);
-
   const EnterkeyPressReset = (e) => {
     // press enter/or tab to reset;
     if (e.keyCode === 13 || e.keyCode === 9) {
@@ -135,13 +107,6 @@ const TypeBox = ({
   // set up words state
   const [wordsDict, setWordsDict] = useState(() => {
     const rng = sessionSeed ? createRng(sessionSeed) : undefined;
-    if (customWordsOverride?.parsed?.length) {
-      return customWordsGenerator(
-        customWordsOverride.parsed,
-        DEFAULT_WORDS_COUNT,
-        rng
-      );
-    }
     return wordsGenerator(
       DEFAULT_WORDS_COUNT,
       difficulty,
@@ -214,21 +179,13 @@ const TypeBox = ({
     // 600, ...) rather than the fixed DEFAULT_WORDS_COUNT - 1, which only
     // ever matched the first batch and made continuation one-time only.
     if (wordsDict.length > 0 && currWordIndex === wordsDict.length - 1) {
-      if (customWordsOverride?.parsed?.length) {
-        const generatedCustom = customWordsGenerator(
-          customWordsOverride.parsed,
-          DEFAULT_WORDS_COUNT
-        );
-        setWordsDict((currentArray) => [...currentArray, ...generatedCustom]);
-      } else {
-        const generatedEng = wordsGenerator(
-          DEFAULT_WORDS_COUNT,
-          difficulty,
-          numberAddOn,
-          symbolAddOn
-        );
-        setWordsDict((currentArray) => [...currentArray, ...generatedEng]);
-      }
+      const generatedEng = wordsGenerator(
+        DEFAULT_WORDS_COUNT,
+        difficulty,
+        numberAddOn,
+        symbolAddOn
+      );
+      setWordsDict((currentArray) => [...currentArray, ...generatedEng]);
     }
     if (wordSpanRefs[currWordIndex]) {
       const scrollElement = wordSpanRefs[currWordIndex].current;
@@ -270,7 +227,6 @@ const TypeBox = ({
     difficulty,
     numberAddOn,
     symbolAddOn,
-    customWordsOverride,
   ]);
 
   const reset = (
@@ -285,25 +241,15 @@ const TypeBox = ({
       const newSeed = generateSeed();
       setSessionSeed(newSeed);
       const rng = createRng(newSeed);
-      if (customWordsOverride?.parsed?.length) {
-        setWordsDict(
-          customWordsGenerator(
-            customWordsOverride.parsed,
-            DEFAULT_WORDS_COUNT,
-            rng
-          )
-        );
-      } else {
-        setWordsDict(
-          wordsGenerator(
-            DEFAULT_WORDS_COUNT,
-            difficulty,
-            newNumberAddOn,
-            newSymbolAddOn,
-            rng
-          )
-        );
-      }
+      setWordsDict(
+        wordsGenerator(
+          DEFAULT_WORDS_COUNT,
+          difficulty,
+          newNumberAddOn,
+          newSymbolAddOn,
+          rng
+        )
+      );
     }
     setNumberAddOn(newNumberAddOn);
     setSymbolAddOn(newSymbolAddOn);
@@ -916,144 +862,86 @@ const TypeBox = ({
               alignItems="center"
               sx={{ "& .MuiIconButton-root": { padding: "6px" } }}
             >
-              {/* Word-source mode buttons: Random ⇄ Custom. Behave like a
-                  two-way toggle — the active one is highlighted, the other
-                  is clickable to switch. Sub-options for the active mode
-                  (normal/hard for random; just the list name for custom)
-                  appear after the | separator. */}
               <IconButton
                 onClick={() => {
-                  // No-op if already random; otherwise exit custom mode.
-                  if (hasActiveWordList && onClearCustomWords) onClearCustomWords();
+                  reset(
+                    countDownConstant,
+                    DEFAULT_DIFFICULTY,
+                    numberAddOn,
+                    symbolAddOn,
+                    false
+                  );
                 }}
               >
-                <Tooltip title={t("word_source_random_tooltip")}>
-                  <span
-                    className={!hasActiveWordList ? "active-button" : "inactive-button"}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                  >
-                    <ShuffleIcon sx={{ fontSize: 16 }} />
-                    {t("word_source_random_label")}
+                <Tooltip title={t("default_difficulty_tooltip")}>
+                  <span className={getDifficultyButtonClassName(DEFAULT_DIFFICULTY)}>
+                    {DEFAULT_DIFFICULTY}
                   </span>
                 </Tooltip>
               </IconButton>
-              {onCreateWordList && (
-                <IconButton onClick={openWordListMenu}>
-                  <Tooltip
-                    title={
-                      hasActiveWordList
-                        ? t("custom_words_active_clear_tooltip", customWordsOverride?.listName || "")
-                        : t("custom_words_create_tooltip")
-                    }
-                  >
-                    <span
-                      className={hasActiveWordList ? "active-button" : "inactive-button"}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                    >
-                      <FormatListBulletedIcon sx={{ fontSize: 16 }} />
-                      {hasActiveWordList && customWordsOverride?.listName
-                        ? customWordsOverride.listName
-                        : t("custom_words_button_label")}
-                    </span>
-                  </Tooltip>
-                </IconButton>
-              )}
-              {!hasActiveWordList && (
-                <>
-                  <span
-                    className="menu-separator"
-                    style={{
-                      margin: "0 8px",
-                      opacity: 0.45,
-                      fontSize: 13,
-                      userSelect: "none",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    |
+              <IconButton
+                onClick={() => {
+                  reset(
+                    countDownConstant,
+                    HARD_DIFFICULTY,
+                    numberAddOn,
+                    symbolAddOn,
+                    false
+                  );
+                }}
+              >
+                <Tooltip title={t("hard_difficulty_tooltip")}>
+                  <span className={getDifficultyButtonClassName(HARD_DIFFICULTY)}>
+                    {HARD_DIFFICULTY}
                   </span>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        DEFAULT_DIFFICULTY,
-                        numberAddOn,
-                        symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("default_difficulty_tooltip")}>
-                      <span className={getDifficultyButtonClassName(DEFAULT_DIFFICULTY)}>
-                        {DEFAULT_DIFFICULTY}
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        HARD_DIFFICULTY,
-                        numberAddOn,
-                        symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("hard_difficulty_tooltip")}>
-                      <span className={getDifficultyButtonClassName(HARD_DIFFICULTY)}>
-                        {HARD_DIFFICULTY}
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <span
-                    className="menu-separator"
-                    style={{
-                      margin: "0 8px",
-                      opacity: 0.45,
-                      fontSize: 13,
-                      userSelect: "none",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    |
+                </Tooltip>
+              </IconButton>
+              <span
+                className="menu-separator"
+                style={{
+                  margin: "0 8px",
+                  opacity: 0.45,
+                  fontSize: 13,
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
+              >
+                |
+              </span>
+              <IconButton
+                onClick={() => {
+                  reset(
+                    countDownConstant,
+                    difficulty,
+                    !numberAddOn,
+                    symbolAddOn,
+                    false
+                  );
+                }}
+              >
+                <Tooltip title={t("number_addon_tooltip")}>
+                  <span className={getAddOnButtonClassName(numberAddOn)}>
+                    {NUMBER_ADDON}
                   </span>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        difficulty,
-                        !numberAddOn,
-                        symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("number_addon_tooltip")}>
-                      <span className={getAddOnButtonClassName(numberAddOn)}>
-                        {NUMBER_ADDON}
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        difficulty,
-                        numberAddOn,
-                        !symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("symbol_addon_tooltip")}>
-                      <span className={getAddOnButtonClassName(symbolAddOn)}>
-                        {SYMBOL_ADDON}
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                </>
-              )}
+                </Tooltip>
+              </IconButton>
+              <IconButton
+                onClick={() => {
+                  reset(
+                    countDownConstant,
+                    difficulty,
+                    numberAddOn,
+                    !symbolAddOn,
+                    false
+                  );
+                }}
+              >
+                <Tooltip title={t("symbol_addon_tooltip")}>
+                  <span className={getAddOnButtonClassName(symbolAddOn)}>
+                    {SYMBOL_ADDON}
+                  </span>
+                </Tooltip>
+              </IconButton>
               <span
                 className="menu-separator"
                 style={{
@@ -1210,109 +1098,6 @@ const TypeBox = ({
             <span className="key-note">{t("to_exit")}</span>
           </DialogTitle>
         </Dialog>
-        <Menu
-          anchorEl={wordListMenuAnchor}
-          open={wordListMenuOpen}
-          onClose={closeWordListMenu}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-          // MUI 5.6 doesn't support `slotProps.paper` — use PaperProps. The
-          // explicit `background` + `backgroundImage: none` is needed because
-          // MUI Paper applies its own elevation gradient that would otherwise
-          // wash out dark themes.
-          PaperProps={{
-            sx: {
-              background: theme.background,
-              backgroundImage: "none",
-              color: theme.text,
-              fontFamily: theme.fontFamily,
-              border: `1px solid ${theme.textTypeBox}40`,
-              minWidth: 220,
-              "& .MuiMenuItem-root:hover": {
-                background: `${theme.textTypeBox}1f`,
-              },
-              "& .MuiMenuItem-root.Mui-selected": {
-                background: `${theme.stats}22`,
-              },
-              "& .MuiDivider-root": {
-                borderColor: `${theme.textTypeBox}30`,
-              },
-            },
-          }}
-        >
-          {(customWordLists || []).length === 0 && (
-            <MenuItem disabled sx={{ fontSize: 12, opacity: 0.7, color: theme.textTypeBox }}>
-              {t("custom_words_menu_empty")}
-            </MenuItem>
-          )}
-          {(customWordLists || []).map((wl) => {
-            const isActive = wl.id === activeWordListId;
-            return (
-              <MenuItem
-                key={wl.id}
-                onClick={() => {
-                  closeWordListMenu();
-                  if (!isActive && onActivateWordList) onActivateWordList(wl.id);
-                }}
-                sx={{
-                  fontSize: 13,
-                  color: isActive ? theme.stats : theme.text,
-                  fontWeight: isActive ? 600 : 400,
-                  fontFamily: theme.fontFamily,
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 24, color: theme.stats }}>
-                  {isActive ? <CheckIcon sx={{ fontSize: 16 }} /> : null}
-                </ListItemIcon>
-                <span style={{ flex: 1 }}>{wl.name}</span>
-                <span style={{ fontSize: 10, opacity: 0.6, marginLeft: 8, color: theme.textTypeBox }}>
-                  EN
-                </span>
-              </MenuItem>
-            );
-          })}
-          {(customWordLists || []).length > 0 && <Divider sx={{ borderColor: `${theme.textTypeBox}30` }} />}
-          {hasActiveWordList && (
-            <MenuItem
-              onClick={() => {
-                closeWordListMenu();
-                if (onClearCustomWords) onClearCustomWords();
-              }}
-              sx={{ fontSize: 13, color: theme.text, fontFamily: theme.fontFamily }}
-            >
-              <ListItemIcon sx={{ minWidth: 24, color: theme.textTypeBox }}>
-                <ClearIcon sx={{ fontSize: 16 }} />
-              </ListItemIcon>
-              {t("custom_words_menu_clear")}
-            </MenuItem>
-          )}
-          <MenuItem
-            onClick={() => {
-              closeWordListMenu();
-              if (onCreateWordList) onCreateWordList();
-            }}
-            sx={{ fontSize: 13, color: theme.stats, fontFamily: theme.fontFamily }}
-          >
-            <ListItemIcon sx={{ minWidth: 24, color: theme.stats }}>
-              <AddIcon sx={{ fontSize: 16 }} />
-            </ListItemIcon>
-            {t("custom_words_menu_new")}
-          </MenuItem>
-          {hasActiveWordList && onEditWordList && (
-            <MenuItem
-              onClick={() => {
-                closeWordListMenu();
-                onEditWordList(activeWordListId);
-              }}
-              sx={{ fontSize: 13, color: theme.text, fontFamily: theme.fontFamily }}
-            >
-              <ListItemIcon sx={{ minWidth: 24, color: theme.textTypeBox }}>
-                <SettingsIcon sx={{ fontSize: 16 }} />
-              </ListItemIcon>
-              {t("custom_words_menu_manage")}
-            </MenuItem>
-          )}
-        </Menu>
       </div>
     </>
   );

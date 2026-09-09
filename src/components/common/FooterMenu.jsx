@@ -8,8 +8,10 @@ import Select from "../utils/Select";
 import {
   WORD_MODE_LABEL,
   SENTENCE_MODE_LABEL,
+  LOCAL_MODE_LABEL,
   GAME_MODE_DEFAULT,
   GAME_MODE_SENTENCE,
+  GAME_MODE_LOCAL,
 } from "../../constants/Constants";
 import KeyboardAltOutlinedIcon from "@mui/icons-material/KeyboardAltOutlined";
 import { useLocale } from "../../context/LocaleContext";
@@ -65,6 +67,14 @@ const FooterMenu = ({
             >
               <span className={modeCls(gameMode, GAME_MODE_SENTENCE)}>
                 {SENTENCE_MODE_LABEL}
+              </span>
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => handleWordSentenceMode(GAME_MODE_LOCAL)}
+            >
+              <span className={modeCls(gameMode, GAME_MODE_LOCAL)}>
+                {LOCAL_MODE_LABEL}
               </span>
             </IconButton>
             <IconButton size="small" onClick={toggleTrainerMode}>
