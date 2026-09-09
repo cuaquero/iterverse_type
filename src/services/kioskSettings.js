@@ -17,10 +17,13 @@ export const SOURCE_OPTIONS = [
 
 export const SESSION_LENGTH_OPTIONS = [30, 60, 90, 120];
 
+export const TAP_MODE_LENGTH_OPTIONS = [15, 30, 60];
+
 export const DEFAULT_KIOSK_SETTINGS = {
   mode: "sentence", // "sentence" | "word"
   sources: ["cache_valley", "box_elder", "btech_history", "utah"],
   sessionSeconds: 60,
+  tapModeSeconds: 30,
 };
 
 export const loadKioskSettings = () => {

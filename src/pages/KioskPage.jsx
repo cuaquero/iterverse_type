@@ -521,7 +521,7 @@ const KioskPage = () => {
       </Banner>
 
       {viewMode === "tap" ? (
-        <TapMode onExit={() => setViewMode("typing")} />
+        <TapMode onExit={() => setViewMode("typing")} roundSeconds={settings.tapModeSeconds} />
       ) : (
       <Main>
         <HiddenInput

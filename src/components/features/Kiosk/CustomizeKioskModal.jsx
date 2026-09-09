@@ -13,6 +13,7 @@ import styled, { useTheme } from "styled-components";
 import {
   SOURCE_OPTIONS,
   SESSION_LENGTH_OPTIONS,
+  TAP_MODE_LENGTH_OPTIONS,
   loadKioskSettings,
   saveKioskSettings,
 } from "../../../services/kioskSettings";
@@ -97,6 +98,8 @@ const CustomizeKioskModal = ({ open, onClose }) => {
   const setMode = (mode) => setSettings((s) => ({ ...s, mode }));
   const setSessionSeconds = (sessionSeconds) =>
     setSettings((s) => ({ ...s, sessionSeconds }));
+  const setTapModeSeconds = (tapModeSeconds) =>
+    setSettings((s) => ({ ...s, tapModeSeconds }));
   const toggleSource = (key) =>
     setSettings((s) => ({
       ...s,
@@ -184,6 +187,21 @@ const CustomizeKioskModal = ({ open, onClose }) => {
                   key={secs}
                   $active={settings.sessionSeconds === secs}
                   onClick={() => setSessionSeconds(secs)}
+                >
+                  {secs}s
+                </SessionButton>
+              ))}
+            </SessionRow>
+          </Section>
+
+          <Section>
+            <SectionLabel>Tap Mode length</SectionLabel>
+            <SessionRow>
+              {TAP_MODE_LENGTH_OPTIONS.map((secs) => (
+                <SessionButton
+                  key={secs}
+                  $active={settings.tapModeSeconds === secs}
+                  onClick={() => setTapModeSeconds(secs)}
                 >
                   {secs}s
                 </SessionButton>

@@ -6,14 +6,15 @@
  * Repurposes the same mechanic as the main app's QWERTY Trainer mode
  * (src/components/features/Keyboard/DefaultKeyboard.jsx): press the
  * highlighted key. No sentences to read, no leaderboard, no accuracy
- * grading — a fixed-length round that always ends on an encouraging note
- * regardless of how it went, so nobody "loses."
+ * grading — a round that always ends on an encouraging note regardless of
+ * how it went, so nobody "loses." Round length comes from the `roundSeconds`
+ * prop (staff-configurable via Customize Kiosk Session). Every correct press
+ * showers a few copies of that letter down the screen for a bit of visual
+ * feedback beyond the key flash.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled, { keyframes } from "styled-components";
-
-const ROUND_SECONDS = 45;
 
 const ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -44,7 +45,14 @@ const pulse = keyframes`
   50% { transform: scale(1.08); }
 `;
 
+const rain = keyframes`
+  from { top: -10%; opacity: 1; }
+  85% { opacity: 1; }
+  to { top: 110%; opacity: 0; }
+`;
+
 const Wrap = styled.div`
+  position: relative;
   flex: 1;
   width: 100%;
   display: flex;
@@ -54,6 +62,25 @@ const Wrap = styled.div`
   gap: clamp(1.5rem, 4vh, 3rem);
   padding: var(--space-8) var(--space-4);
   text-align: center;
+`;
+
+const RainLayer = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+`;
+
+const Raindrop = styled.span`
+  position: absolute;
+  left: ${({ $x }) => $x}%;
+  top: -10%;
+  transform: translateX(-50%);
+  font-size: ${({ $size }) => $size}rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-success);
+  animation: ${rain} ${({ $duration }) => $duration}s linear forwards;
+  animation-delay: ${({ $delay }) => $delay}s;
 `;
 
 const Timer = styled.div`
@@ -156,15 +183,17 @@ const Button = styled.button`
   }
 `;
 
-const TapMode = ({ onExit }) => {
+const TapMode = ({ onExit, roundSeconds = 30 }) => {
   const [targetKey, setTargetKey] = useState(() => pickNextKey(null));
   const [flash, setFlash] = useState(null); // { key, state }
   const [correctCount, setCorrectCount] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
+  const [secondsLeft, setSecondsLeft] = useState(roundSeconds);
   const [phase, setPhase] = useState("playing");
   const [message] = useState(() => ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]);
+  const [raindrops, setRaindrops] = useState([]);
   const inputRef = useRef(null);
   const flashTimerRef = useRef(null);
+  const rainIdRef = useRef(0);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -192,6 +221,27 @@ const TapMode = ({ onExit }) => {
     flashTimerRef.current = setTimeout(() => setFlash(null), 150);
   }, []);
 
+  const spawnRain = useCallback((letter) => {
+    const glyph = letter === " " ? "_" : letter;
+    const drops = Array.from({ length: 10 }, () => {
+      rainIdRef.current += 1;
+      return {
+        id: rainIdRef.current,
+        glyph,
+        x: 5 + Math.random() * 90,
+        size: 1.25 + Math.random() * 1.5,
+        duration: 0.9 + Math.random() * 0.7,
+        delay: Math.random() * 0.2,
+      };
+    });
+    setRaindrops((prev) => [...prev, ...drops]);
+    const lifespan = Math.max(...drops.map((d) => d.duration + d.delay)) * 1000 + 100;
+    const ids = new Set(drops.map((d) => d.id));
+    setTimeout(() => {
+      setRaindrops((prev) => prev.filter((d) => !ids.has(d.id)));
+    }, lifespan);
+  }, []);
+
   const handleKeyDown = (e) => {
     if (phase !== "playing") return;
     e.preventDefault();
@@ -199,6 +249,7 @@ const TapMode = ({ onExit }) => {
     if (pressed === targetKey) {
       setCorrectCount((c) => c + 1);
       showFlash(pressed, "correct");
+      spawnRain(pressed);
       setTargetKey((prev) => pickNextKey(prev));
     } else if (ALL_KEYS.includes(pressed)) {
       showFlash(pressed, "wrong");
@@ -206,10 +257,11 @@ const TapMode = ({ onExit }) => {
   };
 
   const playAgain = () => {
-    setSecondsLeft(ROUND_SECONDS);
+    setSecondsLeft(roundSeconds);
     setCorrectCount(0);
     setTargetKey(pickNextKey(null));
     setFlash(null);
+    setRaindrops([]);
     setPhase("playing");
   };
 
@@ -247,6 +299,13 @@ const TapMode = ({ onExit }) => {
         autoFocus
         aria-label="Press the highlighted key"
       />
+      <RainLayer>
+        {raindrops.map((d) => (
+          <Raindrop key={d.id} $x={d.x} $size={d.size} $duration={d.duration} $delay={d.delay}>
+            {d.glyph}
+          </Raindrop>
+        ))}
+      </RainLayer>
       <Timer>{secondsLeft}s</Timer>
       <KeyboardWrap>
         {ROWS.map((row, i) => (
