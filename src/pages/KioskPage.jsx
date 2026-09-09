@@ -13,13 +13,15 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import styled, { createGlobalStyle } from "styled-components";
+import styled, { createGlobalStyle, keyframes, css } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
+import btechMark from "../assets/iterverse/btech-mark.png";
 import { submitKioskScore, fetchTodayKioskLeaderboard, deleteKioskEntry } from "../services/leaderboard";
 import { INITIALS_BLOCKLIST } from "../constants/bannedWords";
 import TapMode from "../components/features/Kiosk/TapMode";
 import { loadKioskSettings, buildSentencePool, buildWordPool } from "../services/kioskSettings";
+import { playTimeUpChime } from "../services/chime";
 
 const LEADERBOARD_REFRESH_MS = 20000;
 const INITIALS_LENGTH = 3;
@@ -106,6 +108,21 @@ const ProductName = styled.span`
   margin-left: 4px;
 `;
 
+const BrandDivider = styled.span`
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.25);
+  margin-left: 10px;
+  flex-shrink: 0;
+`;
+
+const BtechMark = styled.img`
+  height: 18px;
+  width: auto;
+  margin-left: 10px;
+  flex-shrink: 0;
+`;
+
 const ExitLink = styled.a`
   flex-shrink: 0;
   white-space: nowrap;
@@ -126,9 +143,9 @@ const BannerActions = styled.div`
 
 const SessionTimer = styled.div`
   flex-shrink: 0;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-  color: var(--text-muted);
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  font-weight: var(--fw-bold);
+  color: ${({ $urgent }) => ($urgent ? "var(--color-danger)" : "var(--text-body)")};
   font-variant-numeric: tabular-nums;
 `;
 
@@ -174,6 +191,11 @@ const SentenceCard = styled.div`
   line-height: var(--lh-normal);
 `;
 
+const blinkingUnderline = keyframes`
+  0%, 100% { border-bottom-color: var(--color-brand); }
+  50% { border-bottom-color: var(--text-muted); }
+`;
+
 const Char = styled.span`
   color: ${({ $state }) =>
     $state === "correct"
@@ -184,6 +206,13 @@ const Char = styled.span`
   text-decoration: ${({ $state, $isSpace }) =>
     $state === "wrong" && $isSpace ? "underline" : "none"};
   white-space: pre-wrap;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  ${({ $pulse }) =>
+    $pulse &&
+    css`
+      animation: ${blinkingUnderline} 2s infinite;
+    `}
 `;
 
 const Caret = styled.div`
@@ -375,6 +404,7 @@ const KioskPage = () => {
   const [manageMode, setManageMode] = useState(false);
   const manageLongPressRef = useRef(null);
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState(settings.sessionSeconds);
+  const [hasStartedTyping, setHasStartedTyping] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [finalWpm, setFinalWpm] = useState(0);
   const inputRef = useRef(null);
@@ -384,6 +414,22 @@ const KioskPage = () => {
   const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
+
+  // Pulse pacing (see Customize Kiosk Session) highlights the word the
+  // visitor is currently typing instead of showing the caret bar — same
+  // two styles TypeBox itself offers, ported to Kiosk's char-by-char
+  // sentence rendering rather than TypeBox's word-tokenized one.
+  const currentWordRange = useMemo(() => {
+    if (settings.pacingStyle !== "pulse") return null;
+    const text = current.text;
+    const pos = Math.min(typed.length, text.length - 1);
+    if (pos < 0) return null;
+    let start = pos;
+    while (start > 0 && text[start - 1] !== " ") start--;
+    let end = pos;
+    while (end < text.length && text[end] !== " ") end++;
+    return [start, end];
+  }, [current.text, typed.length, settings.pacingStyle]);
 
   // Caret position, ported from TypeBox's SmoothCaret: measure the next
   // untyped char span relative to the card so the bar tracks exactly where
@@ -439,9 +485,11 @@ const KioskPage = () => {
   // with no stop-and-see-your-WPM pause, until this hits zero — matching
   // how the regular app's own timed modes behave, per Customize Kiosk.
   // Depends only on the tick itself (not on typed/completedWordCountRef)
-  // so completing a sentence never resets the 1s cadence.
+  // so completing a sentence never resets the 1s cadence. Doesn't start
+  // ticking until the visitor's first keystroke, same as regular mode —
+  // otherwise reading the prompt before typing eats into the time limit.
   useEffect(() => {
-    if (sessionEnded) return;
+    if (sessionEnded || !hasStartedTyping) return;
     const timer = setTimeout(() => {
       setSessionSecondsLeft((s) => {
         if (s <= 1) {
@@ -450,18 +498,20 @@ const KioskPage = () => {
           );
           setFinalWpm(Math.min(rawWpm, 250));
           setSessionEnded(true);
+          playTimeUpChime();
           return 0;
         }
         return s - 1;
       });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [sessionSecondsLeft, sessionEnded, settings.sessionSeconds]);
+  }, [sessionSecondsLeft, sessionEnded, hasStartedTyping, settings.sessionSeconds]);
 
   const startNewSession = useCallback(() => {
     const freshSettings = loadKioskSettings();
     setSettings(freshSettings);
     setSessionSecondsLeft(freshSettings.sessionSeconds);
+    setHasStartedTyping(false);
     setSessionEnded(false);
     setFinalWpm(0);
     completedWordCountRef.current = 0;
@@ -474,6 +524,7 @@ const KioskPage = () => {
 
   const handleChange = (e) => {
     if (sessionEnded) return;
+    if (!hasStartedTyping) setHasStartedTyping(true);
     const value = e.target.value;
     if (value.length > current.text.length) return;
     setTyped(value);
@@ -571,11 +622,10 @@ const KioskPage = () => {
             <em>verse</em>
           </Wordmark>{" "}
           <ProductName>Type</ProductName>
+          <BrandDivider aria-hidden="true" />
+          <BtechMark src={btechMark} alt="Bridgerland Technical College" />
         </BrandGroup>
         <BannerActions>
-          {viewMode === "typing" && !sessionEnded && (
-            <SessionTimer>{formatTime(sessionSecondsLeft)}</SessionTimer>
-          )}
           <ModeToggle
             onClick={(e) => {
               e.stopPropagation();
@@ -637,6 +687,9 @@ const KioskPage = () => {
           </SessionEndCard>
         ) : (
           <>
+            <SessionTimer $urgent={hasStartedTyping && sessionSecondsLeft <= 10}>
+              {formatTime(sessionSecondsLeft)}
+            </SessionTimer>
             <Eyebrow>
               {settings.mode === "word" ? "Word practice" : current.topic || "Sentence practice"}
             </Eyebrow>
@@ -644,18 +697,28 @@ const KioskPage = () => {
               {current.text.split("").map((char, i) => {
                 const state =
                   i >= typed.length ? "pending" : typed[i] === char ? "correct" : "wrong";
+                const pulse =
+                  currentWordRange != null && i >= currentWordRange[0] && i < currentWordRange[1];
                 return (
-                  <Char key={i} data-char-index={i} $state={state} $isSpace={char === " "}>
+                  <Char
+                    key={i}
+                    data-char-index={i}
+                    $state={state}
+                    $isSpace={char === " "}
+                    $pulse={pulse}
+                  >
                     {char}
                   </Char>
                 );
               })}
-              <Caret
-                $x={caretPos.x}
-                $y={caretPos.y}
-                $height={caretPos.height}
-                $visible={caretPos.visible}
-              />
+              {settings.pacingStyle !== "pulse" && (
+                <Caret
+                  $x={caretPos.x}
+                  $y={caretPos.y}
+                  $height={caretPos.height}
+                  $visible={caretPos.visible}
+                />
+              )}
             </SentenceCard>
           </>
         )}

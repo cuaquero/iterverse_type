@@ -15,6 +15,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled, { keyframes } from "styled-components";
+import { playTimeUpChime } from "../../../services/chime";
 
 const ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -203,6 +204,7 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
     if (phase !== "playing") return;
     if (secondsLeft <= 0) {
       setPhase("done");
+      playTimeUpChime();
       return;
     }
     const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);

@@ -14,6 +14,7 @@ import {
   SOURCE_OPTIONS,
   SESSION_LENGTH_OPTIONS,
   TAP_MODE_LENGTH_OPTIONS,
+  PACING_STYLE_OPTIONS,
   loadKioskSettings,
   saveKioskSettings,
 } from "../../../services/kioskSettings";
@@ -100,6 +101,8 @@ const CustomizeKioskModal = ({ open, onClose }) => {
     setSettings((s) => ({ ...s, sessionSeconds }));
   const setTapModeSeconds = (tapModeSeconds) =>
     setSettings((s) => ({ ...s, tapModeSeconds }));
+  const setPacingStyle = (pacingStyle) =>
+    setSettings((s) => ({ ...s, pacingStyle }));
   const toggleSource = (key) =>
     setSettings((s) => ({
       ...s,
@@ -207,6 +210,21 @@ const CustomizeKioskModal = ({ open, onClose }) => {
                 </SessionButton>
               ))}
             </SessionRow>
+          </Section>
+
+          <Section>
+            <SectionLabel>Pacing style</SectionLabel>
+            <ModeRow>
+              {PACING_STYLE_OPTIONS.map((style) => (
+                <ModeButton
+                  key={style}
+                  $active={settings.pacingStyle === style}
+                  onClick={() => setPacingStyle(style)}
+                >
+                  {style === "pulse" ? "Pulse" : "Caret"}
+                </ModeButton>
+              ))}
+            </ModeRow>
           </Section>
         </DialogContent>
 

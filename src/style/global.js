@@ -136,6 +136,17 @@ color: ${({ theme }) => theme.textTypeBox};
 font-weight: 400;
 letter-spacing: normal;
 }
+.logo-divider {
+width: 1px;
+height: 18px;
+background: rgba(255, 255, 255, 0.25);
+flex-shrink: 0;
+}
+.logo-btech-mark {
+height: 18px;
+width: auto;
+flex-shrink: 0;
+}
 .logo-gant {
 font-size: 16px;
 font-weight: 300;

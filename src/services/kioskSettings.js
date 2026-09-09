@@ -19,11 +19,14 @@ export const SESSION_LENGTH_OPTIONS = [30, 60, 90, 120];
 
 export const TAP_MODE_LENGTH_OPTIONS = [15, 30, 60];
 
+export const PACING_STYLE_OPTIONS = ["pulse", "caret"];
+
 export const DEFAULT_KIOSK_SETTINGS = {
   mode: "sentence", // "sentence" | "word"
   sources: ["cache_valley", "box_elder", "btech_history", "utah"],
   sessionSeconds: 60,
   tapModeSeconds: 30,
+  pacingStyle: "caret", // "pulse" | "caret" — see TypeBox's own pacing-style toggle
 };
 
 export const loadKioskSettings = () => {

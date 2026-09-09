@@ -3,6 +3,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import CustomizeKioskModal from "../features/Kiosk/CustomizeKioskModal";
+import btechMark from "../../assets/iterverse/btech-mark.png";
 
 const Logo = () => {
   const [kioskModalOpen, setKioskModalOpen] = useState(false);
@@ -29,6 +30,12 @@ const Logo = () => {
               <span className="logo-wordmark-verse">verse</span>
             </span>{" "}
             <span className="logo-accent logo-product-name">Type</span>
+            <span className="logo-divider" aria-hidden="true"></span>
+            <img
+              src={btechMark}
+              alt="Bridgerland Technical College"
+              className="logo-btech-mark"
+            />
           </h1>
         </div>
       </div>
