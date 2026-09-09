@@ -28,7 +28,17 @@ export default defineConfig({
       // Exclude /admin so those navigations always go to the network and
       // actually hit Access, at the cost of /admin having no offline
       // support (acceptable - it's a staff tool, not the kiosk).
-      navigateFallbackDenylist: [/^\/admin/],
+      //
+      // /cdn-cgi/ needs the same exclusion for a subtler reason: it's not
+      // gated content, it's Cloudflare's own edge-handled namespace -
+      // Access's login callback (/cdn-cgi/access/authorized?...) is itself
+      // a navigation, and it's what actually sets the CF_Authorization
+      // cookie and redirects back to /admin. Letting the service worker
+      // serve the cached app shell there instead means that cookie never
+      // gets set and the redirect never happens - the browser is left
+      // sitting on the bare callback URL. Same failure mode as /admin,
+      // caught the hard way after the first fix only covered /admin.
+      navigateFallbackDenylist: [/^\/admin/, /^\/cdn-cgi\//],
     },
   })],
   server: {
