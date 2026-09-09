@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import TouchAppIcon from "@mui/icons-material/TouchApp";
+import CustomizeKioskModal from "../features/Kiosk/CustomizeKioskModal";
 
 const Logo = () => {
+  const [kioskModalOpen, setKioskModalOpen] = useState(false);
+
   return (
     <div className="header">
       <div className="logo-row">
@@ -26,6 +32,14 @@ const Logo = () => {
           </h1>
         </div>
       </div>
+      <div style={{ position: "absolute", top: "4px", right: "12px" }}>
+        <Tooltip title="Customize Kiosk Session">
+          <IconButton size="small" onClick={() => setKioskModalOpen(true)}>
+            <TouchAppIcon fontSize="small" className="nav-item" />
+          </IconButton>
+        </Tooltip>
+      </div>
+      <CustomizeKioskModal open={kioskModalOpen} onClose={() => setKioskModalOpen(false)} />
     </div>
   );
 };

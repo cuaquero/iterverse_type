@@ -12,7 +12,6 @@ import {
   GAME_MODE_SENTENCE,
 } from "../../constants/Constants";
 import KeyboardAltOutlinedIcon from "@mui/icons-material/KeyboardAltOutlined";
-import TouchAppIcon from "@mui/icons-material/TouchApp";
 import { useLocale } from "../../context/LocaleContext";
 
 const FooterMenu = ({
@@ -72,13 +71,6 @@ const FooterMenu = ({
               <Tooltip title={t("trainer_mode")}>
                 <span className={activeCls(isTrainerMode)}>
                   <KeyboardAltOutlinedIcon fontSize="small" />
-                </span>
-              </Tooltip>
-            </IconButton>
-            <IconButton size="small" onClick={() => window.location.href = "/kiosk"}>
-              <Tooltip title="Kiosk Mode (for events)">
-                <span className="nav-item">
-                  <TouchAppIcon fontSize="small" />
                 </span>
               </Tooltip>
             </IconButton>

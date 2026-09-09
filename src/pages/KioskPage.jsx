@@ -16,9 +16,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styled, { createGlobalStyle } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
-import LOCAL_HISTORY_SENTENCES from "../constants/LocalHistorySentences";
 import { submitKioskScore, fetchTodayKioskLeaderboard } from "../services/leaderboard";
 import KidsMode from "../components/features/Kiosk/KidsMode";
+import { loadKioskSettings, buildSentencePool, buildWordPool } from "../services/kioskSettings";
 
 const AUTO_ADVANCE_MS = 8000;
 const POST_SUBMIT_ADVANCE_MS = 2500;
@@ -78,7 +78,7 @@ const Banner = styled.div`
 const BrandGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 2px;
 `;
 
 const Wordmark = styled.span`
@@ -242,6 +242,36 @@ const NextButton = styled.button`
   }
 `;
 
+const SessionEndCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+`;
+
+const SessionEndMessage = styled.div`
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: var(--fw-bold);
+  color: var(--text-body);
+`;
+
+const RestartButton = styled.button`
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--fs-md);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: var(--white);
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease-standard);
+  &:hover {
+    background: var(--color-brand-hover);
+  }
+`;
+
 const LeaderboardPanel = styled.div`
   position: fixed;
   bottom: var(--space-4);
@@ -329,7 +359,11 @@ function buildShuffledOrder(count, avoidFirst) {
 
 const KioskPage = () => {
   const [viewMode, setViewMode] = useState("typing");
-  const sentences = useMemo(() => LOCAL_HISTORY_SENTENCES, []);
+  const [settings, setSettings] = useState(() => loadKioskSettings());
+  const sentences = useMemo(
+    () => (settings.mode === "word" ? buildWordPool() : buildSentencePool(settings.sources)),
+    [settings]
+  );
   const [order, setOrder] = useState(() => buildShuffledOrder(sentences.length));
   const [pointer, setPointer] = useState(0);
   const [typed, setTyped] = useState("");
@@ -339,6 +373,8 @@ const KioskPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [initials, setInitials] = useState("");
   const [initialsSubmitted, setInitialsSubmitted] = useState(false);
+  const [sessionSecondsLeft, setSessionSecondsLeft] = useState(settings.sessionSeconds);
+  const [sessionEnded, setSessionEnded] = useState(false);
   const inputRef = useRef(null);
   const initialsInputRef = useRef(null);
   const advanceTimerRef = useRef(null);
@@ -401,6 +437,10 @@ const KioskPage = () => {
       clearTimeout(advanceTimerRef.current);
       advanceTimerRef.current = null;
     }
+    if (sessionSecondsLeft <= 0) {
+      setSessionEnded(true);
+      return;
+    }
     setTyped("");
     setStartTime(null);
     setFinished(false);
@@ -414,7 +454,31 @@ const KioskPage = () => {
       }
       return nextPointer;
     });
-  }, [order, sentences.length]);
+  }, [order, sentences.length, sessionSecondsLeft]);
+
+  // Session countdown — a fresh session (new pool shuffle, reset timer)
+  // starts once staff-configured seconds run out, per Customize Kiosk.
+  useEffect(() => {
+    if (sessionEnded) return;
+    const timer = setTimeout(() => {
+      setSessionSecondsLeft((s) => Math.max(s - 1, 0));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [sessionSecondsLeft, sessionEnded]);
+
+  const startNewSession = useCallback(() => {
+    const freshSettings = loadKioskSettings();
+    setSettings(freshSettings);
+    setSessionSecondsLeft(freshSettings.sessionSeconds);
+    setSessionEnded(false);
+    setOrder(buildShuffledOrder(sentences.length));
+    setPointer(0);
+    setTyped("");
+    setStartTime(null);
+    setFinished(false);
+    setInitials("");
+    setInitialsSubmitted(false);
+  }, [sentences.length]);
 
   const handleChange = (e) => {
     if (finished) return;
@@ -480,7 +544,7 @@ const KioskPage = () => {
           <Wordmark>
             <strong>iter</strong>
             <em>verse</em>
-          </Wordmark>
+          </Wordmark>{" "}
           <ProductName>Type</ProductName>
         </BrandGroup>
         <BannerActions>
@@ -509,9 +573,22 @@ const KioskPage = () => {
           aria-label="Type the sentence shown above"
         />
 
-        {!finished ? (
+        {sessionEnded ? (
+          <SessionEndCard>
+            <SessionEndMessage>Thanks for stopping by!</SessionEndMessage>
+            <RestartButton onClick={(e) => { e.stopPropagation(); startNewSession(); }}>
+              Start New Session
+            </RestartButton>
+          </SessionEndCard>
+        ) : !finished ? (
           <>
-            <Eyebrow>Typing challenge — local history edition</Eyebrow>
+            <Eyebrow>
+              {settings.mode === "word"
+                ? "Typing challenge — word practice"
+                : current.topic
+                ? "Typing challenge — local history edition"
+                : "Typing challenge — sentence practice"}
+            </Eyebrow>
             <SentenceCard ref={sentenceCardRef}>
               {current.text.split("").map((char, i) => {
                 const state =
@@ -535,9 +612,11 @@ const KioskPage = () => {
           <ResultCard>
             <Eyebrow>Nice work.</Eyebrow>
             <Wpm>{wpm} WPM</Wpm>
-            <TopicBadge>
-              <strong>Did you know?</strong> {current.topic}
-            </TopicBadge>
+            {current.topic && (
+              <TopicBadge>
+                <strong>Did you know?</strong> {current.topic}
+              </TopicBadge>
+            )}
 
             {initialsSubmitted ? (
               <InitialsPrompt>You're on today's leaderboard!</InitialsPrompt>
