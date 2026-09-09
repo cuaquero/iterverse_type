@@ -46,37 +46,39 @@ const pulse = keyframes`
 
 const Wrap = styled.div`
   flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-6);
+  gap: clamp(1.5rem, 4vh, 3rem);
   padding: var(--space-8) var(--space-4);
   text-align: center;
 `;
 
 const Timer = styled.div`
-  font-size: var(--fs-xl);
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
   font-weight: var(--fw-bold);
   color: var(--text-body);
   font-variant-numeric: tabular-nums;
 `;
 
 const Prompt = styled.div`
-  font-size: var(--fs-base);
+  font-size: clamp(1.25rem, 2.6vw, 2rem);
   color: var(--text-muted);
 `;
 
 const KeyboardWrap = styled.div`
+  --key-size: clamp(3.5rem, min(7.5vw, 11vh), 7.5rem);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: clamp(0.5rem, 1.4vh, 1rem);
 `;
 
 const Row = styled.div`
   display: flex;
-  gap: var(--space-2);
+  gap: clamp(0.5rem, 1.2vw, 1rem);
 `;
 
 const keyBackground = ({ $target, $flash }) => {
@@ -87,12 +89,12 @@ const keyBackground = ({ $target, $flash }) => {
 };
 
 const Key = styled.div`
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--key-size);
+  height: var(--key-size);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-md);
+  font-size: clamp(1.5rem, min(3.2vw, 4.5vh), 3rem);
   font-weight: var(--fw-bold);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
@@ -103,7 +105,7 @@ const Key = styled.div`
 `;
 
 const SpaceKey = styled(Key)`
-  width: 14rem;
+  width: calc(var(--key-size) * 5.2);
 `;
 
 const HiddenInput = styled.input`
@@ -122,13 +124,13 @@ const EndCard = styled.div`
 `;
 
 const EndMessage = styled.div`
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
   font-weight: var(--fw-bold);
   color: var(--text-body);
 `;
 
 const EndSub = styled.div`
-  font-size: var(--fs-md);
+  font-size: clamp(1.25rem, 2.6vw, 1.75rem);
   color: var(--text-body);
 `;
 
@@ -139,8 +141,8 @@ const ButtonRow = styled.div`
 `;
 
 const Button = styled.button`
-  padding: var(--space-3) var(--space-6);
-  font-size: var(--fs-md);
+  padding: var(--space-4) var(--space-8);
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
   border: none;

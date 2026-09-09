@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Eletypes is a typing-test web app built with **React 18 + Vite**. It has grown beyond typing tests into four pillars: typing test, vocab cards, **Keyboard Lab** (3D keyboard designer), and a **Markdown editor**. A no-signup leaderboard is backed by Supabase; everything else lives in `localStorage`.
+Eletypes is a typing-test web app built with **React 18 + Vite**. It has grown beyond typing tests into four pillars: typing test, vocab cards, **Keyboard Lab** (3D keyboard designer), and a **Markdown editor**. Kiosk mode's same-day leaderboard and everything else live in `localStorage` — there is no backend.
 
 Source files use `.jsx` extension (not `.js`) for React components.
 
@@ -33,10 +33,6 @@ Source files use `.jsx` extension (not `.js`) for React components.
 - **Build:** `npm run build` — outputs to `build/` (note: not the Vite default `dist/`)
 - **Preview:** `npm run preview` — serve production build locally
 - **Deploy:** `npm run deploy` — runs build (no separate Firebase step despite the name; Firebase deploy is invoked manually or via CI)
-
-### Environment Variables
-
-Vite is configured with `envPrefix: "SUPABASE_"` in `vite.config.js`, **not the default `VITE_`**. So `.env` keys must be named `SUPABASE_URL`, `SUPABASE_ANON_KEY`, etc., and read via `import.meta.env.SUPABASE_*`. If Supabase env is missing, `src/services/supabase.js` exports `null` and leaderboard features degrade gracefully — keep that contract intact when touching the service layer.
 
 ## Architecture
 
@@ -75,13 +71,10 @@ Instantiated in `TypeBox` via `new Worker(new URL("../../../worker/...", import.
 
 ### Services Layer (`src/services/`)
 
-Thin wrappers around Supabase + browser APIs:
-- `supabase.js` — client factory, exports `null` if env vars missing
-- `leaderboard.js` — read/submit WPM scores
+Thin wrappers around browser APIs — no backend, everything is `localStorage`:
+- `leaderboard.js` — Kiosk mode's same-day high score board (read/submit WPM scores)
 - `badges.js` — achievement evaluation
 - `scoreHistory.js` — local session history
-- `fingerprint.js` — FingerprintJS for anti-cheat / dedup on leaderboard submission (the only thing besides display name that leaves the device)
-- `userIdentity.js` — local display name management
 - `challengeLink.js` — parses `?challenge=` URL params into a deterministic seeded test (parsed once at module level in `App.jsx`, before any hook runs, then `localStorage` is force-populated so `useLocalPersistState` picks up the overrides on first render)
 
 ### i18n

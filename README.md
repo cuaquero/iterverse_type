@@ -11,7 +11,9 @@
 Practice typing, or run it as a no-login kiosk station at a BTECH event —
 type on the giant keyboard, see your words-per-minute, and learn a fact
 about BTECH, Cache Valley, Box Elder County, or Utah while you're at it.
-Younger visitors get their own simplified, always-encouraging Kids Mode.
+Visitors who'd rather not read sentences — young kids, students with
+special needs, or anyone just passing by — get their own simplified,
+always-encouraging Tap Mode.
 
 It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [Reader](https://github.com/cuaquero/iterverse_reader),
@@ -29,11 +31,10 @@ across projects).
 
 ## What's here
 
-A React 18 + Vite single-page app with no accounts and no backend of its
-own, other than an optional Supabase-backed daily leaderboard for Kiosk
-mode (degrades gracefully to "no leaderboard" if unconfigured). Practice
-history, themes, and custom word lists live in the browser's
-`localStorage` and never leave the device.
+A React 18 + Vite single-page app with no accounts and no backend at all.
+Practice history, themes, custom word lists, and Kiosk mode's daily
+leaderboard all live in the browser's `localStorage` and never leave the
+device.
 
 This app has intentionally stayed narrow in scope: it's a typing-practice
 tool and an event kiosk, not a general-purpose platform. Features that
@@ -57,13 +58,15 @@ removed — see git history if you need to resurrect any of it.
   for how to add more sentences and how new content gets checked before
   it ships. Includes a same-day, arcade-style leaderboard (3-letter
   initials, resets daily) shown right on the kiosk screen.
-- **Kids Mode** (toggle from the Kiosk banner) — repurposes the QWERTY
+- **Tap Mode** (toggle from the Kiosk banner) — repurposes the QWERTY
   trainer's press-the-highlighted-key mechanic into a simple, fixed-length
-  round (45s) for younger visitors: no sentences to read, no leaderboard,
-  and it always ends on an encouraging note regardless of how it went.
+  round (45s) for visitors who'd rather not read sentences — young kids,
+  students with special needs, or anyone just passing by: no sentences to
+  read, no leaderboard, and it always ends on an encouraging note
+  regardless of how it went.
 
-Plus: 18 built-in themes (4 with dynamic WebGL backgrounds), typing
-sounds, and PWA install support.
+Plus: a single fixed dark theme built on BTECH's own brand tokens (no
+theme picker), typing sounds, and PWA install support.
 
 ## Local development
 
@@ -73,10 +76,6 @@ npm run dev      # localhost:3000
 npm run build    # production bundle to build/
 npm run preview  # serve the production bundle locally
 ```
-
-Copy `.env.example` to `.env` and fill in `SUPABASE_URL`/`SUPABASE_ANON_KEY`
-to enable the Kiosk daily leaderboard locally (see
-`src/services/leaderboard.js` and `src/services/supabase.js`).
 
 ## Content safety
 
@@ -96,9 +95,7 @@ substitute for reading new content yourself.
 Live at **type.iterverse.net**, deployed on **Cloudflare Pages** (build
 command `npm run build`, build output directory `build/`).
 `public/_redirects` carries the SPA-fallback rewrite Pages needs for the
-`/kiosk` client-side route. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` as
-Pages build-time environment variables to enable the Kiosk leaderboard in
-production.
+`/kiosk` client-side route.
 
 ## License
 
