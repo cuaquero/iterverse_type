@@ -20,9 +20,11 @@ const writeEntries = (entries) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(-MAX_STORED_ENTRIES)));
 };
 
+const generateEntryId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 export const submitKioskScore = ({ initials, wpm }) => {
   const entries = readEntries();
-  entries.push({ initials, wpm: Math.round(wpm), date: todayKey() });
+  entries.push({ id: generateEntryId(), initials, wpm: Math.round(wpm), date: todayKey() });
   writeEntries(entries);
   return { result: "new" };
 };
@@ -33,5 +35,13 @@ export const fetchTodayKioskLeaderboard = (limit = 10) => {
     .filter((e) => e.date === today)
     .sort((a, b) => b.wpm - a.wpm)
     .slice(0, limit)
-    .map((e) => ({ user_name: e.initials, wpm: e.wpm }));
+    .map((e) => ({ id: e.id, user_name: e.initials, wpm: e.wpm }));
+};
+
+// An instructor running the kiosk can long-press "Today's Top Typists" to
+// reveal a delete button per row — for anything a bit of profanity slipped
+// past (see INITIALS_BLOCKLIST in bannedWords.js), or any entry that just
+// shouldn't be there.
+export const deleteKioskEntry = (id) => {
+  writeEntries(readEntries().filter((e) => e.id !== id));
 };

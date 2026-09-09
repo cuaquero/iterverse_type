@@ -16,13 +16,16 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import styled, { createGlobalStyle } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
-import { submitKioskScore, fetchTodayKioskLeaderboard } from "../services/leaderboard";
+import { submitKioskScore, fetchTodayKioskLeaderboard, deleteKioskEntry } from "../services/leaderboard";
+import { INITIALS_BLOCKLIST } from "../constants/bannedWords";
 import TapMode from "../components/features/Kiosk/TapMode";
 import { loadKioskSettings, buildSentencePool, buildWordPool } from "../services/kioskSettings";
 
 const LEADERBOARD_REFRESH_MS = 20000;
 const INITIALS_LENGTH = 3;
 const BANNER_HEIGHT = "64px";
+const MANAGE_LONG_PRESS_MS = 600;
+const MANAGE_MODE_TIMEOUT_MS = 10000;
 
 // Iterverse Type is dark-only (one shared BTECH-branded identity across
 // the regular typing test and Kiosk — see src/style/theme.js). tokens.css
@@ -261,6 +264,7 @@ const LeaderboardTitle = styled.div`
   letter-spacing: 1.5px;
   color: var(--text-muted);
   margin-bottom: var(--space-2);
+  user-select: none;
 `;
 
 const LeaderboardList = styled.ol`
@@ -278,6 +282,28 @@ const LeaderboardRow = styled.li`
   font-size: var(--fs-sm);
   color: var(--text-body);
   font-variant-numeric: tabular-nums;
+`;
+
+const LeaderboardRowRight = styled.span`
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+`;
+
+const DeleteEntryButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-danger);
+  color: var(--white);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
 `;
 
 const LeaderboardRank = styled.span`
@@ -345,6 +371,9 @@ const KioskPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [initials, setInitials] = useState("");
   const [initialsSubmitted, setInitialsSubmitted] = useState(false);
+  const [initialsRejected, setInitialsRejected] = useState(false);
+  const [manageMode, setManageMode] = useState(false);
+  const manageLongPressRef = useRef(null);
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState(settings.sessionSeconds);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [finalWpm, setFinalWpm] = useState(0);
@@ -471,6 +500,12 @@ const KioskPage = () => {
   const handleInitialsChange = (e) => {
     if (initialsSubmitted) return;
     const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, INITIALS_LENGTH);
+    if (value.length === INITIALS_LENGTH && INITIALS_BLOCKLIST.includes(value)) {
+      setInitials("");
+      setInitialsRejected(true);
+      setTimeout(() => setInitialsRejected(false), 1500);
+      return;
+    }
     setInitials(value);
   };
 
@@ -482,6 +517,39 @@ const KioskPage = () => {
       await loadLeaderboard();
     })();
   }, [sessionEnded, initials, initialsSubmitted, finalWpm, loadLeaderboard]);
+
+  // Instructor-only entry removal: long-press the leaderboard title to
+  // reveal a delete button per row (no login on a public kiosk, so this
+  // stays a low-key gesture rather than a visible "admin" control).
+  // Auto-exits after a bit so it's never left revealed for the next visitor.
+  useEffect(() => {
+    if (!manageMode) return;
+    const timer = setTimeout(() => setManageMode(false), MANAGE_MODE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [manageMode]);
+
+  const clearManageLongPress = () => {
+    if (manageLongPressRef.current) {
+      clearTimeout(manageLongPressRef.current);
+      manageLongPressRef.current = null;
+    }
+  };
+
+  const startManageLongPress = (e) => {
+    e.stopPropagation();
+    manageLongPressRef.current = setTimeout(() => setManageMode(true), MANAGE_LONG_PRESS_MS);
+  };
+
+  const handleTitleClick = (e) => {
+    e.stopPropagation();
+    if (manageMode) setManageMode(false);
+  };
+
+  const handleDeleteEntry = async (e, id) => {
+    e.stopPropagation();
+    deleteKioskEntry(id);
+    await loadLeaderboard();
+  };
 
   return (
     <Screen onClick={focusInput}>
@@ -549,7 +617,11 @@ const KioskPage = () => {
                     </InitialsBox>
                   ))}
                 </InitialsRow>
-                <InitialsPrompt>Enter your initials for today's leaderboard</InitialsPrompt>
+                <InitialsPrompt>
+                  {initialsRejected
+                    ? "Please choose different initials"
+                    : "Enter your initials for today's leaderboard"}
+                </InitialsPrompt>
                 <HiddenInput
                   ref={initialsInputRef}
                   value={initials}
@@ -592,15 +664,32 @@ const KioskPage = () => {
 
       {viewMode === "typing" && (
         <LeaderboardPanel>
-          <LeaderboardTitle>Today's Top Typists</LeaderboardTitle>
+          <LeaderboardTitle
+            onPointerDown={startManageLongPress}
+            onPointerUp={clearManageLongPress}
+            onPointerLeave={clearManageLongPress}
+            onClick={handleTitleClick}
+          >
+            Today's Top Typists
+          </LeaderboardTitle>
           {leaderboard.length === 0 ? (
             <LeaderboardEmpty>No scores yet today — be the first!</LeaderboardEmpty>
           ) : (
             <LeaderboardList>
               {leaderboard.map((row, i) => (
-                <LeaderboardRow key={i}>
+                <LeaderboardRow key={row.id ?? i}>
                   <span><LeaderboardRank>{i + 1}.</LeaderboardRank>{row.user_name}</span>
-                  <span>{row.wpm} WPM</span>
+                  <LeaderboardRowRight>
+                    <span>{row.wpm} WPM</span>
+                    {manageMode && (
+                      <DeleteEntryButton
+                        onClick={(e) => handleDeleteEntry(e, row.id)}
+                        aria-label={`Remove ${row.user_name}'s score`}
+                      >
+                        ×
+                      </DeleteEntryButton>
+                    )}
+                  </LeaderboardRowRight>
                 </LeaderboardRow>
               ))}
             </LeaderboardList>

@@ -19,3 +19,13 @@ export const BANNED_WORD_PATTERN = new RegExp(
   `\\b(${BANNED_WORDS.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
   "i"
 );
+
+// The Kiosk leaderboard's 3-letter initials are too short for
+// BANNED_WORD_PATTERN's whole-word matching to catch much (most entries
+// above are 4+ letters) — arcade high-score boards have run into this same
+// problem for decades, so this is a small, dedicated blocklist of exactly
+// 3-letter combinations to reject outright. Not exhaustive.
+export const INITIALS_BLOCKLIST = [
+  "ASS", "SEX", "FAG", "FUK", "FUC", "SHT", "TIT", "CUM", "JIZ", "NIG",
+  "KKK", "SOB", "DIK", "DIC", "COC", "PIS", "NAZ", "KYS", "CLT", "TWA",
+];
