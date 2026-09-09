@@ -367,24 +367,6 @@ top:200px;
 width: 60%;
 }
 }
-.type-box-chinese {
-display: block;
-max-width: 1000px;
-/* 3 rows: each row = pinyin(20px * 1.4 + 8px) + word(28px * 1.4 + 10px margin-bottom) + 2px border ≈ 87px */
-height: calc((20px * 1.4 + 8px + 28px * 1.4 + 10px + 2px) * 3);
-overflow: hidden;
-margin-left: auto;
-margin-right: auto;
-position: relative;
-top: 10%;
-@media only screen
-and (min-device-width: 375px)
-and (max-device-width: 812px)
-and (-webkit-min-device-pixel-ratio: 3) {
-top:200px;
-width: 60%;
-}
-}
 .words{
 color: ${({ theme }) => theme.textTypeBox};
 font-size: 28px;
@@ -557,31 +539,6 @@ border-radius: 16px;
 color: ${({ theme }) => theme.textTypeBox};
 background-color: none;
 font-size: 16px;
-}
-.chinese-word{
-margin-left: 10px;
-margin-right: 10px;
-margin-bottom: 10px;
-display: flex;
-padding-right: 2px;
-border-bottom: 1px solid transparent;
-border-top: 1px solid transparent;
-}
-.chinese-word-key{
-margin: 4px 4px;
-color: ${({ theme }) => theme.textTypeBox};
-background-color: none;
-display: flex;
-justify-content: center;
-font-size: 20px;
-scroll-margin: 4px;
-text-align: center;
-}
-.error-chinese{
-color: red;
-}
-.active-chinese{
-color: ${({ theme }) => theme.stats};
 }
 .dialog{
 background: ${({ theme }) => theme.background};
@@ -869,7 +826,7 @@ gap: 8px;
   .canvas {
     padding: 0.5rem;
   }
-  .type-box, .type-box-chinese, .type-box-sentence {
+  .type-box, .type-box-sentence {
     width: 90%;
     top: 5%;
   }

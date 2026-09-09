@@ -13,19 +13,12 @@ export const translations = {
       "normal mode generates random words from top 1000 most frequently used words in English dataset.",
     hard_difficulty_tooltip:
       "hard mode generates random words from blog posts words data, so you may encounter longer and less frequently used word.",
-    default_difficulty_tooltip_chinese:
-      "normal mode generates random words from top 5000 most frequently used words in Chinese dataset.",
-    hard_difficulty_tooltip_chinese:
-      "hard mode generates random words from top 1500 most used Chinese idioms.",
     number_addon_tooltip:
       "number mode generates word which contains random number",
     symbol_addon_tooltip:
       "symbol mode generates word which contains random symbol",
-    english_mode_tooltip: "English Mode",
-    chinese_mode_tooltip: "Chinese Pinyin Mode",
     restart_tooltip: "[Tab] + [Enter] to quickly restart",
     redo_tooltip: "[Tab] + [Space] to quickly redo",
-    chinese_display_mode_tooltip: "Hide pinyin/characters to improve typing speed.",
     pacing_caret_tooltip:
       'type the word with a caret "|", character by character.',
     pacing_pulse_tooltip:
@@ -50,10 +43,6 @@ export const translations = {
     char_tooltip:
       "correct/incorrect/missing/extra\n extras are recorded even if deleted.",
 
-    // Sentence mode
-    english_sentence_mode_tooltip: "English Sentence Mode",
-    chinese_sentence_mode_tooltip: "Chinese Sentence Mode",
-
     // Caps Lock
     caps_locked: "Caps Locked",
 
@@ -66,21 +55,12 @@ export const translations = {
       "Define your own words for timed word-mode tests. The list loops to fill the timer.",
     custom_words_field_name: "Name",
     custom_words_field_name_placeholder: "e.g. Keyboard Review Demo",
-    custom_words_field_language: "Language",
     custom_words_field_words: "Words",
-    custom_words_lang_en: "English",
-    custom_words_lang_zh: "Chinese pinyin",
     custom_words_placeholder_en:
       "mechanical keyboard switch keycap\nlinear tactile clicky\nhotswap gasket plate (click Insert sample to fill)",
-    custom_words_placeholder_zh:
-      "机械键盘\n客制化\n轴体\n键帽\n汉字 mypinyin   (← 仅在需要覆盖时填)",
     custom_words_format_hint_en:
       "Words separated by spaces or new lines. The list loops if it's shorter than the timer.",
-    custom_words_format_hint_zh:
-      'One entry per line. Type the hanzi only — pinyin is auto-generated. Override with "<hanzi> <pinyin>" if you want a different reading.',
     custom_words_parsed_count: "{0} parsed",
-    custom_words_resolving: "Generating pinyin…",
-    custom_words_preview_label: "Preview (what you'll type)",
     custom_words_action_save: "Save",
     custom_words_action_save_activate: "Save & activate",
     custom_words_action_cancel: "Cancel",

@@ -11,8 +11,6 @@ import {
   DEFAULT_SENTENCES_COUNT,
   TEN_SENTENCES_COUNT,
   FIFTEEN_SENTENCES_COUNT,
-  ENGLISH_MODE,
-  CHINESE_MODE,
 } from "../../../constants/Constants";
 import useLocalPersistState from "../../../hooks/useLocalPersistState";
 import { useLocale } from "../../../context/LocaleContext";
@@ -36,12 +34,6 @@ const SentenceBox = ({
   const [sentencesCountConstant, setSentencesCountConstant] =
     useLocalPersistState(DEFAULT_SENTENCES_COUNT, "sentences-constant");
 
-  // local persist difficulty
-  const [language, setLanguage] = useLocalPersistState(
-    ENGLISH_MODE,
-    "sentences-language"
-  );
-
   // tab-enter restart dialog
   const [openRestart, setOpenRestart] = useState(false);
   const EnterkeyPressReset = (e) => {
@@ -49,11 +41,11 @@ const SentenceBox = ({
     if (e.keyCode === 13 || e.keyCode === 9) {
       e.preventDefault();
       setOpenRestart(false);
-      reset(sentencesCountConstant, language, false);
+      reset(sentencesCountConstant, false);
     } else if (e.keyCode === 32) {
       e.preventDefault();
       setOpenRestart(false);
-      reset(sentencesCountConstant, language, true);
+      reset(sentencesCountConstant, true);
     } else {
       e.preventDefault();
       setOpenRestart(false);
@@ -66,13 +58,6 @@ const SentenceBox = ({
 
   const getSentencesCountButtonClassName = (buttonSentencesCountConstant) => {
     if (buttonSentencesCountConstant === sentencesCountConstant) {
-      return "active-button";
-    }
-    return "inactive-button";
-  };
-
-  const getLanguageButtonClassName = (buttonLanguage) => {
-    if (language === buttonLanguage) {
       return "active-button";
     }
     return "inactive-button";
@@ -102,7 +87,7 @@ const SentenceBox = ({
 
   // set up sentences
   const [sentencesDict, setSentencesDict] = useState(() => {
-    return sentencesGenerator(sentencesCountConstant, language);
+    return sentencesGenerator(sentencesCountConstant);
   });
   // enable menu
   // Menu is always shown (focus mode removed).
@@ -125,14 +110,11 @@ const SentenceBox = ({
 
   const wpm = time < 1 ? 0 : ((rawKeyStroke / time) * 60) / 5;
 
-  const reset = (newSentencesCountConstant, newLanguage, isRedo) => {
+  const reset = (newSentencesCountConstant, isRedo) => {
     setStatus("watiting");
     setSentencesCountConstant(newSentencesCountConstant);
-    setLanguage(newLanguage);
     if (!isRedo) {
-      setSentencesDict(
-        sentencesGenerator(newSentencesCountConstant, newLanguage)
-      );
+      setSentencesDict(sentencesGenerator(newSentencesCountConstant));
     }
     setTimeRunning(false);
     setTime(0);
@@ -150,7 +132,7 @@ const SentenceBox = ({
 
   const start = () => {
     if (status === "finished") {
-      reset(sentencesCountConstant, language, false);
+      reset(sentencesCountConstant, false);
     }
     if (status !== "started") {
       setStatus("started");
@@ -320,7 +302,7 @@ const SentenceBox = ({
                 color="secondary"
                 size="medium"
                 onClick={() => {
-                  reset(sentencesCountConstant, language, true);
+                  reset(sentencesCountConstant, true);
                 }}
               >
                 <Tooltip title={t("redo_tooltip")}>
@@ -332,7 +314,7 @@ const SentenceBox = ({
                 color="secondary"
                 size="medium"
                 onClick={() => {
-                  reset(sentencesCountConstant, language, false);
+                  reset(sentencesCountConstant, false);
                 }}
               >
                 <Tooltip title={t("restart_tooltip")}>
@@ -343,7 +325,7 @@ const SentenceBox = ({
                 <>
                   <IconButton
                     onClick={() => {
-                      reset(DEFAULT_SENTENCES_COUNT, language, false);
+                      reset(DEFAULT_SENTENCES_COUNT, false);
                     }}
                   >
                     <span
@@ -356,7 +338,7 @@ const SentenceBox = ({
                   </IconButton>
                   <IconButton
                     onClick={() => {
-                      reset(TEN_SENTENCES_COUNT, language, false);
+                      reset(TEN_SENTENCES_COUNT, false);
                     }}
                   >
                     <span
@@ -369,7 +351,7 @@ const SentenceBox = ({
                   </IconButton>
                   <IconButton
                     onClick={() => {
-                      reset(FIFTEEN_SENTENCES_COUNT, language, false);
+                      reset(FIFTEEN_SENTENCES_COUNT, false);
                     }}
                   >
                     <span
@@ -379,36 +361,6 @@ const SentenceBox = ({
                     >
                       {FIFTEEN_SENTENCES_COUNT}
                     </span>
-                  </IconButton>
-                  <IconButton>
-                    {" "}
-                    <span className="menu-separator"> | </span>{" "}
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      reset(sentencesCountConstant, ENGLISH_MODE, false);
-                    }}
-                  >
-                    <Tooltip title={t("english_sentence_mode_tooltip")}>
-                      <span
-                        className={getLanguageButtonClassName(ENGLISH_MODE)}
-                      >
-                        eng
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      reset(sentencesCountConstant, CHINESE_MODE, false);
-                    }}
-                  >
-                    <Tooltip title={t("chinese_sentence_mode_tooltip")}>
-                      <span
-                        className={getLanguageButtonClassName(CHINESE_MODE)}
-                      >
-                        chn
-                      </span>
-                    </Tooltip>
                   </IconButton>
                 </>
               )}

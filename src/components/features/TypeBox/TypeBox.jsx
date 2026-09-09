@@ -1,9 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import useSound from "use-sound";
-import {
-  wordsGenerator,
-  chineseWordsGenerator,
-} from "../../../scripts/wordsGenerator";
+import { wordsGenerator } from "../../../scripts/wordsGenerator";
 import { customWordsGenerator } from "../../../scripts/customWords";
 import { createRng, generateSeed } from "../../../scripts/seedUtils";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -40,8 +37,6 @@ import {
   HARD_DIFFICULTY,
   NUMBER_ADDON,
   SYMBOL_ADDON,
-  ENGLISH_MODE,
-  CHINESE_MODE,
   PACING_CARET,
   PACING_PULSE,
   NUMBER_ADDON_KEY,
@@ -49,7 +44,6 @@ import {
 } from "../../../constants/Constants";
 import { SOUND_MAP } from "../sound/sound";
 import EnglishModeWords from "../../common/EnglishModeWords";
-import ChineseModeWords from "../../common/ChineseModeWords";
 import { useLocale } from "../../../context/LocaleContext";
 
 const TypeBox = ({
@@ -85,23 +79,10 @@ const TypeBox = ({
     "pacing-style"
   );
 
-  // Chinese-mode display toggle: "both" | "hanzi" | "pinyin". Controls
-  // whether the Chinese characters and/or the pinyin hint are visible.
-  const [chineseDisplayMode, setChineseDisplayMode] = useLocalPersistState(
-    "both",
-    "chinese-display-mode"
-  );
-
   // local persist difficulty
   const [difficulty, setDifficulty] = useLocalPersistState(
     DEFAULT_DIFFICULTY,
     "difficulty"
-  );
-
-  // local persist language
-  const [language, setLanguage] = useLocalPersistState(
-    ENGLISH_MODE,
-    "language"
   );
 
   // local persist words add on for number
@@ -136,26 +117,12 @@ const TypeBox = ({
     if (e.keyCode === 13 || e.keyCode === 9) {
       e.preventDefault();
       setOpenRestart(false);
-      reset(
-        countDownConstant,
-        difficulty,
-        language,
-        numberAddOn,
-        symbolAddOn,
-        false
-      );
+      reset(countDownConstant, difficulty, numberAddOn, symbolAddOn, false);
     } // press space to redo
     else if (e.keyCode === 32) {
       e.preventDefault();
       setOpenRestart(false);
-      reset(
-        countDownConstant,
-        difficulty,
-        language,
-        numberAddOn,
-        symbolAddOn,
-        true
-      );
+      reset(countDownConstant, difficulty, numberAddOn, symbolAddOn, true);
     } else {
       e.preventDefault();
       setOpenRestart(false);
@@ -164,12 +131,6 @@ const TypeBox = ({
   const handleTabKeyOpen = () => {
     setOpenRestart(true);
   };
-
-  // When a custom word list is active, it preempts the persisted language
-  // setting for this test. The list's own language drives both word generation
-  // and rendering. Built-in difficulty/number/symbol add-ons are skipped — the
-  // user already curated the exact words they want.
-  const effectiveLanguage = customWordsOverride?.language ?? language;
 
   // set up words state
   const [wordsDict, setWordsDict] = useState(() => {
@@ -181,33 +142,17 @@ const TypeBox = ({
         rng
       );
     }
-    if (effectiveLanguage === ENGLISH_MODE) {
-      return wordsGenerator(
-        DEFAULT_WORDS_COUNT,
-        difficulty,
-        ENGLISH_MODE,
-        numberAddOn,
-        symbolAddOn,
-        rng
-      );
-    }
-    if (effectiveLanguage === CHINESE_MODE) {
-      return chineseWordsGenerator(
-        difficulty,
-        CHINESE_MODE,
-        numberAddOn,
-        symbolAddOn,
-        rng
-      );
-    }
+    return wordsGenerator(
+      DEFAULT_WORDS_COUNT,
+      difficulty,
+      numberAddOn,
+      symbolAddOn,
+      rng
+    );
   });
 
   const words = useMemo(() => {
     return wordsDict.map((e) => e.val);
-  }, [wordsDict]);
-
-  const wordsKey = useMemo(() => {
-    return wordsDict.map((e) => e.key);
   }, [wordsDict]);
 
   const wordSpanRefs = useMemo(
@@ -275,35 +220,24 @@ const TypeBox = ({
           DEFAULT_WORDS_COUNT
         );
         setWordsDict((currentArray) => [...currentArray, ...generatedCustom]);
-      } else if (effectiveLanguage === ENGLISH_MODE) {
+      } else {
         const generatedEng = wordsGenerator(
           DEFAULT_WORDS_COUNT,
           difficulty,
-          ENGLISH_MODE,
           numberAddOn,
           symbolAddOn
         );
         setWordsDict((currentArray) => [...currentArray, ...generatedEng]);
-      } else if (effectiveLanguage === CHINESE_MODE) {
-        const generatedChinese = chineseWordsGenerator(
-          difficulty,
-          CHINESE_MODE,
-          numberAddOn,
-          symbolAddOn
-        );
-        setWordsDict((currentArray) => [...currentArray, ...generatedChinese]);
       }
     }
     if (wordSpanRefs[currWordIndex]) {
       const scrollElement = wordSpanRefs[currWordIndex].current;
       if (scrollElement) {
         // Find the type-box container (overflow:hidden parent)
-        const typeBox = scrollElement.closest(".type-box") || scrollElement.closest(".type-box-chinese");
+        const typeBox = scrollElement.closest(".type-box");
         if (typeBox) {
           // Calculate the row height from the word element
-          const wordWrapper = effectiveLanguage === CHINESE_MODE
-            ? scrollElement.parentElement // div wrapping pinyin + chars
-            : scrollElement;
+          const wordWrapper = scrollElement;
           const rowHeight = wordWrapper ? wordWrapper.offsetHeight +
             parseFloat(getComputedStyle(wordWrapper).marginBottom || 0) : 0;
 
@@ -334,8 +268,6 @@ const TypeBox = ({
     startIndex,
     visibleWordsCount,
     difficulty,
-    language,
-    effectiveLanguage,
     numberAddOn,
     symbolAddOn,
     customWordsOverride,
@@ -344,7 +276,6 @@ const TypeBox = ({
   const reset = (
     newCountDown,
     difficulty,
-    language,
     newNumberAddOn,
     newSymbolAddOn,
     isRedo
@@ -354,8 +285,6 @@ const TypeBox = ({
       const newSeed = generateSeed();
       setSessionSeed(newSeed);
       const rng = createRng(newSeed);
-      // Custom list locks the language for this test — see effectiveLanguage.
-      const resetLanguage = customWordsOverride?.language ?? language;
       if (customWordsOverride?.parsed?.length) {
         setWordsDict(
           customWordsGenerator(
@@ -364,22 +293,11 @@ const TypeBox = ({
             rng
           )
         );
-      } else if (resetLanguage === CHINESE_MODE) {
-        setWordsDict(
-          chineseWordsGenerator(
-            difficulty,
-            resetLanguage,
-            newNumberAddOn,
-            newSymbolAddOn,
-            rng
-          )
-        );
-      } else if (resetLanguage === ENGLISH_MODE) {
+      } else {
         setWordsDict(
           wordsGenerator(
             DEFAULT_WORDS_COUNT,
             difficulty,
-            resetLanguage,
             newNumberAddOn,
             newSymbolAddOn,
             rng
@@ -392,7 +310,6 @@ const TypeBox = ({
     setCountDownConstant(newCountDown);
     setCountDown(newCountDown);
     setDifficulty(difficulty);
-    setLanguage(language);
     clearInterval(intervalId);
     setWpm(0);
     setRawKeyStrokes(0);
@@ -411,15 +328,7 @@ const TypeBox = ({
     textInputRef.current.focus();
     // console.log("fully reset waiting for next inputs");
     const firstWordElement = wordSpanRefs[0]?.current;
-    if (effectiveLanguage === CHINESE_MODE) {
-      // In Chinese mode the ref is attached to the pinyin span, which is the
-      // second line of each word block. Scrolling the pinyin itself into view
-      // would push the hanzi line above the clipped type-box viewport, so
-      // scroll the whole hanzi + pinyin block instead.
-      firstWordElement?.parentElement?.scrollIntoView();
-    } else {
-      firstWordElement?.scrollIntoView();
-    }
+    firstWordElement?.scrollIntoView();
   };
 
   const start = () => {
@@ -783,42 +692,6 @@ const TypeBox = ({
     }
   };
 
-  const getChineseWordKeyClassName = (wordIdx) => {
-    if (wordsInCorrect.has(wordIdx)) {
-      if (currWordIndex === wordIdx) {
-        return "chinese-word-key error-chinese active-chinese";
-      }
-      return "chinese-word-key error-chinese";
-    } else {
-      if (currWordIndex === wordIdx) {
-        return "chinese-word-key active-chinese";
-      }
-      return "chinese-word-key";
-    }
-  };
-
-  const getChineseWordClassName = (wordIdx) => {
-    if (wordsInCorrect.has(wordIdx)) {
-      if (currWordIndex === wordIdx) {
-        if (pacingStyle === PACING_PULSE) {
-          return "chinese-word error-word active-word";
-        } else {
-          return "chinese-word error-word active-word-no-pulse";
-        }
-      }
-      return "chinese-word error-word";
-    } else {
-      if (currWordIndex === wordIdx) {
-        if (pacingStyle === PACING_PULSE) {
-          return "chinese-word active-word";
-        } else {
-          return "chinese-word active-word-no-pulse";
-        }
-      }
-      return "chinese-word";
-    }
-  };
-
   const charsWorkerRef = useRef();
 
   useEffect(() => {
@@ -908,13 +781,6 @@ const TypeBox = ({
     return "inactive-button";
   };
 
-  const getLanguageButtonClassName = (buttonLanguage) => {
-    if (effectiveLanguage === buttonLanguage) {
-      return "active-button";
-    }
-    return "inactive-button";
-  };
-
   const renderResetButton = () => {
     return (
       <div className="restart-button" key="restart-button">
@@ -928,7 +794,6 @@ const TypeBox = ({
                 reset(
                   countDownConstant,
                   difficulty,
-                  language,
                   numberAddOn,
                   symbolAddOn,
                   true
@@ -947,7 +812,6 @@ const TypeBox = ({
                 reset(
                   countDownConstant,
                   difficulty,
-                  language,
                   numberAddOn,
                   symbolAddOn,
                   false
@@ -965,7 +829,6 @@ const TypeBox = ({
                     reset(
                       COUNT_DOWN_90,
                       difficulty,
-                      language,
                       numberAddOn,
                       symbolAddOn,
                       false
@@ -981,7 +844,6 @@ const TypeBox = ({
                     reset(
                       COUNT_DOWN_60,
                       difficulty,
-                      language,
                       numberAddOn,
                       symbolAddOn,
                       false
@@ -997,7 +859,6 @@ const TypeBox = ({
                     reset(
                       COUNT_DOWN_30,
                       difficulty,
-                      language,
                       numberAddOn,
                       symbolAddOn,
                       false
@@ -1013,7 +874,6 @@ const TypeBox = ({
                     reset(
                       COUNT_DOWN_15,
                       difficulty,
-                      language,
                       numberAddOn,
                       symbolAddOn,
                       false
@@ -1029,7 +889,6 @@ const TypeBox = ({
                     reset(
                       COUNT_DOWN_INFINITE,
                       difficulty,
-                      language,
                       numberAddOn,
                       symbolAddOn,
                       false
@@ -1118,20 +977,13 @@ const TypeBox = ({
                       reset(
                         countDownConstant,
                         DEFAULT_DIFFICULTY,
-                        language,
                         numberAddOn,
                         symbolAddOn,
                         false
                       );
                     }}
                   >
-                    <Tooltip
-                      title={
-                        language === ENGLISH_MODE
-                          ? t("default_difficulty_tooltip")
-                          : t("default_difficulty_tooltip_chinese")
-                      }
-                    >
+                    <Tooltip title={t("default_difficulty_tooltip")}>
                       <span className={getDifficultyButtonClassName(DEFAULT_DIFFICULTY)}>
                         {DEFAULT_DIFFICULTY}
                       </span>
@@ -1142,20 +994,13 @@ const TypeBox = ({
                       reset(
                         countDownConstant,
                         HARD_DIFFICULTY,
-                        language,
                         numberAddOn,
                         symbolAddOn,
                         false
                       );
                     }}
                   >
-                    <Tooltip
-                      title={
-                        language === ENGLISH_MODE
-                          ? t("hard_difficulty_tooltip")
-                          : t("hard_difficulty_tooltip_chinese")
-                      }
-                    >
+                    <Tooltip title={t("hard_difficulty_tooltip")}>
                       <span className={getDifficultyButtonClassName(HARD_DIFFICULTY)}>
                         {HARD_DIFFICULTY}
                       </span>
@@ -1178,7 +1023,6 @@ const TypeBox = ({
                       reset(
                         countDownConstant,
                         difficulty,
-                        language,
                         !numberAddOn,
                         symbolAddOn,
                         false
@@ -1196,7 +1040,6 @@ const TypeBox = ({
                       reset(
                         countDownConstant,
                         difficulty,
-                        language,
                         numberAddOn,
                         !symbolAddOn,
                         false
@@ -1206,54 +1049,6 @@ const TypeBox = ({
                     <Tooltip title={t("symbol_addon_tooltip")}>
                       <span className={getAddOnButtonClassName(symbolAddOn)}>
                         {SYMBOL_ADDON}
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <span
-                    className="menu-separator"
-                    style={{
-                      margin: "0 8px",
-                      opacity: 0.45,
-                      fontSize: 13,
-                      userSelect: "none",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    |
-                  </span>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        difficulty,
-                        ENGLISH_MODE,
-                        numberAddOn,
-                        symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("english_mode_tooltip")}>
-                      <span className={getLanguageButtonClassName(ENGLISH_MODE)}>
-                        eng
-                      </span>
-                    </Tooltip>
-                  </IconButton>
-                  <IconButton
-                    onClick={() => {
-                      reset(
-                        countDownConstant,
-                        difficulty,
-                        CHINESE_MODE,
-                        numberAddOn,
-                        symbolAddOn,
-                        false
-                      );
-                    }}
-                  >
-                    <Tooltip title={t("chinese_mode_tooltip")}>
-                      <span className={getLanguageButtonClassName(CHINESE_MODE)}>
-                        chn
                       </span>
                     </Tooltip>
                   </IconButton>
@@ -1293,44 +1088,6 @@ const TypeBox = ({
                   </span>
                 </Tooltip>
               </IconButton>
-              <span
-                className="menu-separator"
-                style={{
-                  margin: "0 6px",
-                  opacity: 0.45,
-                  fontSize: 13,
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-              >
-                |
-              </span>
-              {effectiveLanguage === CHINESE_MODE && (
-                <IconButton
-                  onClick={() => {
-                    setChineseDisplayMode((prev) =>
-                      prev === "both"
-                        ? "hanzi"
-                        : prev === "hanzi"
-                        ? "pinyin"
-                        : "both"
-                    );
-                  }}
-                >
-                  <Tooltip title={t("chinese_display_mode_tooltip")}>
-                    <span
-                      className="active-button"
-                      style={{ display: "inline-flex", alignItems: "center" }}
-                    >
-                      {chineseDisplayMode === "both"
-                        ? "双"
-                        : chineseDisplayMode === "hanzi"
-                        ? "字"
-                        : "pin"}
-                    </span>
-                  </Tooltip>
-                </IconButton>
-              )}
             </Box>
           )}
         </Grid>
@@ -1381,43 +1138,22 @@ const TypeBox = ({
     <>
       <div onClick={handleInputFocus}>
         <CapsLockSnackbar open={capsLocked}></CapsLockSnackbar>
-        {effectiveLanguage === ENGLISH_MODE && (
-          <EnglishModeWords
-            currentWords={currentWords}
-            currWordIndex={currWordIndex}
-            currCharIndex={currCharIndex}
-            startIndex={startIndex}
-            status={status}
-            wordSpanRefs={wordSpanRefs}
-            getWordClassName={getWordClassName}
-            getCharClassName={getCharClassName}
-            getExtraCharsDisplay={getExtraCharsDisplay}
-            pacingStyle={pacingStyle}
-            theme={theme}
-          />
-        )}
-        {effectiveLanguage === CHINESE_MODE && (
-          <ChineseModeWords
-            currentWords={currentWords}
-            currWordIndex={currWordIndex}
-            currCharIndex={currCharIndex}
-            wordsKey={wordsKey}
-            chineseDisplayMode={chineseDisplayMode}
-            status={status}
-            wordSpanRefs={wordSpanRefs}
-            startIndex={startIndex}
-            getChineseWordKeyClassName={getChineseWordKeyClassName}
-            getChineseWordClassName={getChineseWordClassName}
-            getCharClassName={getCharClassName}
-            getExtraCharsDisplay={getExtraCharsDisplay}
-            pacingStyle={pacingStyle}
-            theme={theme}
-          />
-        )}
+        <EnglishModeWords
+          currentWords={currentWords}
+          currWordIndex={currWordIndex}
+          currCharIndex={currCharIndex}
+          startIndex={startIndex}
+          status={status}
+          wordSpanRefs={wordSpanRefs}
+          getWordClassName={getWordClassName}
+          getCharClassName={getCharClassName}
+          getExtraCharsDisplay={getExtraCharsDisplay}
+          pacingStyle={pacingStyle}
+          theme={theme}
+        />
         <div className="stats">
           <Stats
             status={status}
-            language={language}
             wpm={wpm}
             setIncorrectCharsCount={setIncorrectCharsCount}
             incorrectCharsCount={incorrectCharsCount}
@@ -1530,7 +1266,7 @@ const TypeBox = ({
                 </ListItemIcon>
                 <span style={{ flex: 1 }}>{wl.name}</span>
                 <span style={{ fontSize: 10, opacity: 0.6, marginLeft: 8, color: theme.textTypeBox }}>
-                  {wl.language === CHINESE_MODE ? "中" : "EN"}
+                  EN
                 </span>
               </MenuItem>
             );

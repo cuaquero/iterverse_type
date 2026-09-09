@@ -1,16 +1,6 @@
 import { wordList as hardWordList } from "random-words";
-import {
-  COMMON_WORDS,
-  COMMON_CHINESE_WORDS,
-  COMMON_CHINESE_IDIOMS_WORDS,
-} from "../constants/WordsMostCommon";
-import {
-  DEFAULT_DIFFICULTY,
-  HARD_DIFFICULTY,
-  ENGLISH_MODE,
-  CHINESE_MODE,
-  DEFAULT_WORDS_COUNT,
-} from "../constants/Constants";
+import { COMMON_WORDS } from "../constants/WordsMostCommon";
+import { DEFAULT_DIFFICULTY, HARD_DIFFICULTY } from "../constants/Constants";
 import { randomIntFromRange } from "./randomUtils";
 import {
   generateRandomNumChras,
@@ -21,19 +11,11 @@ import {
 const HARD_ENGLISH_WORDS = hardWordList.filter((w) => w.length <= 7);
 
 // Draw indices against bank.length - 1 so the bound always stays in sync
-// with the selected word bank. Previously each mode had its own hardcoded
-// range (e.g. Chinese idioms drew 0..5000 against a 1500-entry list), which
-// silently shrank generated batches when the range exceeded the bank size.
-// Swapping a word list now only requires updating this map — nothing else.
-const WORD_BANK_BY_MODE = {
-  [ENGLISH_MODE]: {
-    [DEFAULT_DIFFICULTY]: COMMON_WORDS,
-    [HARD_DIFFICULTY]: HARD_ENGLISH_WORDS,
-  },
-  [CHINESE_MODE]: {
-    [DEFAULT_DIFFICULTY]: COMMON_CHINESE_WORDS,
-    [HARD_DIFFICULTY]: COMMON_CHINESE_IDIOMS_WORDS,
-  },
+// with the selected word bank. Swapping a word list only requires updating
+// this map — nothing else.
+const WORD_BANK_BY_DIFFICULTY = {
+  [DEFAULT_DIFFICULTY]: COMMON_WORDS,
+  [HARD_DIFFICULTY]: HARD_ENGLISH_WORDS,
 };
 
 const generateWordsFromBank = (bank, count, numberAddOn, symbolAddOn, rng) => {
@@ -79,39 +61,17 @@ const generateWordsFromBank = (bank, count, numberAddOn, symbolAddOn, rng) => {
 const wordsGenerator = (
   wordsCount,
   difficulty,
-  languageMode,
   numberAddOn,
   symbolAddOn,
   rng
 ) => {
-  if (languageMode === ENGLISH_MODE) {
-    return generateWordsFromBank(
-      WORD_BANK_BY_MODE[ENGLISH_MODE][difficulty],
-      wordsCount,
-      numberAddOn,
-      symbolAddOn,
-      rng
-    );
-  }
-  return ["something", "went", "wrong"];
+  return generateWordsFromBank(
+    WORD_BANK_BY_DIFFICULTY[difficulty],
+    wordsCount,
+    numberAddOn,
+    symbolAddOn,
+    rng
+  );
 };
 
-const chineseWordsGenerator = (
-  difficulty,
-  languageMode,
-  numberAddOn,
-  symbolAddOn,
-  rng
-) => {
-  if (languageMode === CHINESE_MODE) {
-    return generateWordsFromBank(
-      WORD_BANK_BY_MODE[CHINESE_MODE][difficulty],
-      DEFAULT_WORDS_COUNT,
-      numberAddOn,
-      symbolAddOn,
-      rng
-    );
-  }
-};
-
-export { wordsGenerator, chineseWordsGenerator };
+export { wordsGenerator };

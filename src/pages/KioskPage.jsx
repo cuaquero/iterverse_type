@@ -19,6 +19,7 @@ import "../assets/iterverse/fonts.css";
 import btechLogo from "../assets/iterverse/logo-horizontal.png";
 import LOCAL_HISTORY_SENTENCES from "../constants/LocalHistorySentences";
 import { submitKioskScore, fetchTodayKioskLeaderboard } from "../services/leaderboard";
+import KidsMode from "../components/features/Kiosk/KidsMode";
 
 const AUTO_ADVANCE_MS = 8000;
 const POST_SUBMIT_ADVANCE_MS = 2500;
@@ -114,6 +115,28 @@ const ExitLink = styled.a`
   }
 `;
 
+const BannerActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
+`;
+
+const ModeToggle = styled.button`
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  font-family: var(--font-sans);
+  color: var(--color-brand);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  &:hover {
+    color: var(--color-brand-hover);
+  }
+`;
+
 const Main = styled.div`
   flex: 1;
   display: flex;
@@ -132,6 +155,7 @@ const Eyebrow = styled.div`
 `;
 
 const SentenceCard = styled.div`
+  position: relative;
   max-width: min(90vw, 1000px);
   font-size: clamp(1.5rem, 3.4vw, 2.5rem);
   font-weight: var(--fw-medium);
@@ -146,12 +170,27 @@ const SentenceCard = styled.div`
 const Char = styled.span`
   color: ${({ $state }) =>
     $state === "correct"
-      ? "var(--color-success)"
+      ? "var(--text-body)"
       : $state === "wrong"
       ? "var(--color-danger)"
       : "var(--text-muted)"};
-  text-decoration: ${({ $state }) => ($state === "wrong" ? "underline" : "none")};
+  text-decoration: ${({ $state, $isSpace }) =>
+    $state === "wrong" && $isSpace ? "underline" : "none"};
   white-space: pre-wrap;
+`;
+
+const Caret = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  background: var(--color-brand);
+  border-radius: 1px;
+  transform: ${({ $x, $y }) => `translate(${$x}px, ${$y}px)`};
+  height: ${({ $height }) => `${$height}px`};
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transition: transform 80ms ease-out;
+  pointer-events: none;
 `;
 
 const HiddenInput = styled.input`
@@ -301,6 +340,7 @@ function buildShuffledOrder(count, avoidFirst) {
 }
 
 const KioskPage = () => {
+  const [viewMode, setViewMode] = useState("typing");
   const sentences = useMemo(() => LOCAL_HISTORY_SENTENCES, []);
   const [order, setOrder] = useState(() => buildShuffledOrder(sentences.length));
   const [pointer, setPointer] = useState(0);
@@ -314,16 +354,44 @@ const KioskPage = () => {
   const inputRef = useRef(null);
   const initialsInputRef = useRef(null);
   const advanceTimerRef = useRef(null);
+  const sentenceCardRef = useRef(null);
+  const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
 
+  // Caret position, ported from TypeBox's SmoothCaret: measure the next
+  // untyped char span relative to the card so the bar tracks exactly where
+  // regular mode's caret pacing style points, instead of Kiosk having no
+  // position indicator at all.
+  useEffect(() => {
+    if (finished || !sentenceCardRef.current) {
+      setCaretPos((p) => ({ ...p, visible: false }));
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      const container = sentenceCardRef.current;
+      if (!container) return;
+      const chars = container.querySelectorAll("span[data-char-index]");
+      const targetEl = chars[typed.length] || chars[chars.length - 1];
+      if (!targetEl) return;
+      const placeAfter = typed.length >= chars.length;
+      const charRect = targetEl.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const x = (placeAfter ? charRect.right : charRect.left) - containerRect.left;
+      const y = charRect.top - containerRect.top;
+      setCaretPos({ x, y, height: charRect.height, visible: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [typed, finished, current]);
+
   const focusInput = useCallback(() => {
+    if (viewMode !== "typing") return;
     if (finished) {
       initialsInputRef.current?.focus();
     } else {
       inputRef.current?.focus();
     }
-  }, [finished]);
+  }, [finished, viewMode]);
 
   useEffect(() => {
     focusInput();
@@ -428,9 +496,22 @@ const KioskPage = () => {
           <Divider />
           <BtechLogo src={btechLogo} alt="Bridgerland Technical College" />
         </BrandGroup>
-        <ExitLink href="/">Exit kiosk mode</ExitLink>
+        <BannerActions>
+          <ModeToggle
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewMode(viewMode === "kids" ? "typing" : "kids");
+            }}
+          >
+            {viewMode === "kids" ? "Typing Challenge" : "Kids Mode"}
+          </ModeToggle>
+          <ExitLink href="/">Exit kiosk mode</ExitLink>
+        </BannerActions>
       </Banner>
 
+      {viewMode === "kids" ? (
+        <KidsMode onExit={() => setViewMode("typing")} />
+      ) : (
       <Main>
         <HiddenInput
           ref={inputRef}
@@ -444,16 +525,22 @@ const KioskPage = () => {
         {!finished ? (
           <>
             <Eyebrow>Typing challenge — local history edition</Eyebrow>
-            <SentenceCard>
+            <SentenceCard ref={sentenceCardRef}>
               {current.text.split("").map((char, i) => {
                 const state =
                   i >= typed.length ? "pending" : typed[i] === char ? "correct" : "wrong";
                 return (
-                  <Char key={i} $state={state}>
+                  <Char key={i} data-char-index={i} $state={state} $isSpace={char === " "}>
                     {char}
                   </Char>
                 );
               })}
+              <Caret
+                $x={caretPos.x}
+                $y={caretPos.y}
+                $height={caretPos.height}
+                $visible={caretPos.visible}
+              />
             </SentenceCard>
             <Prompt>Start typing on the keyboard — no login required.</Prompt>
           </>
@@ -497,22 +584,25 @@ const KioskPage = () => {
           </ResultCard>
         )}
       </Main>
+      )}
 
-      <LeaderboardPanel>
-        <LeaderboardTitle>Today's Top Typists</LeaderboardTitle>
-        {leaderboard.length === 0 ? (
-          <LeaderboardEmpty>No scores yet today — be the first!</LeaderboardEmpty>
-        ) : (
-          <LeaderboardList>
-            {leaderboard.map((row, i) => (
-              <LeaderboardRow key={i}>
-                <span><LeaderboardRank>{i + 1}.</LeaderboardRank>{row.user_name}</span>
-                <span>{row.wpm} WPM</span>
-              </LeaderboardRow>
-            ))}
-          </LeaderboardList>
-        )}
-      </LeaderboardPanel>
+      {viewMode === "typing" && (
+        <LeaderboardPanel>
+          <LeaderboardTitle>Today's Top Typists</LeaderboardTitle>
+          {leaderboard.length === 0 ? (
+            <LeaderboardEmpty>No scores yet today — be the first!</LeaderboardEmpty>
+          ) : (
+            <LeaderboardList>
+              {leaderboard.map((row, i) => (
+                <LeaderboardRow key={i}>
+                  <span><LeaderboardRank>{i + 1}.</LeaderboardRank>{row.user_name}</span>
+                  <span>{row.wpm} WPM</span>
+                </LeaderboardRow>
+              ))}
+            </LeaderboardList>
+          )}
+        </LeaderboardPanel>
+      )}
     </Screen>
   );
 };

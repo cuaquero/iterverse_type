@@ -140,16 +140,7 @@ const Stats = ({
     }
   }, [countDown, elapsedSeconds, status, isInfiniteMode]);
 
-  const getFormattedLanguageLanguageName = (value) => {
-    switch (value) {
-      case "ENGLISH_MODE":
-        return "eng";
-      case "CHINESE_MODE":
-        return "chn";
-      default:
-        return "eng";
-    }
-  };
+  const getFormattedLanguageLanguageName = () => "eng";
 
   const renderCharStats = () => (
     <Tooltip

@@ -1,4 +1,4 @@
-import { ENGLISH_MODE, CHINESE_MODE } from "../constants/Constants";
+import { ENGLISH_MODE } from "../constants/Constants";
 
 export const CUSTOM_WORDS_KEY = "custom-word-lists";
 export const CUSTOM_WORDS_ACTIVE_KEY = "custom-word-list-active";
@@ -14,36 +14,6 @@ linear tactile clicky silent lube film foam
 plate gasket stabilizer profile cherry topre
 hhkb qmk via pcb gateron kailh akko
 backlight rgb tenkeyless compact ergonomic custom`;
-
-export const SAMPLE_WORDS_ZH = `机械键盘
-客制化
-轴体
-键帽
-配列
-热插拔
-线性轴
-段落轴
-静音
-润轴
-卫星轴
-定位板
-樱桃轴
-茶轴
-红轴
-青轴
-银轴
-静电容
-键位
-凯华
-佳达隆
-阿米洛
-杜伽
-段落感
-触底
-键程
-键盘膜
-蓝牙
-三模`;
 
 export const loadCustomWordLists = () => {
   try {
@@ -91,103 +61,16 @@ export const newCustomWordList = ({ name = "", language = ENGLISH_MODE, text = "
   resolved: null,
 });
 
-const isAsciiToken = (s) => /^[\x20-\x7e]+$/.test(s);
-
-// pinyin-pro is lazy-loaded so it never costs anything on initial page load —
-// only users opening the Chinese custom-words editor pay the ~50KB.
-let _pinyinModulePromise = null;
-const loadPinyinModule = () => {
-  if (!_pinyinModulePromise) {
-    _pinyinModulePromise = import("pinyin-pro");
-  }
-  return _pinyinModulePromise;
-};
-
-// Keep letters + digits. Digits are intentionally preserved so:
-//   1. Pinyin override with tone numbers ("ni3hao3") types as written
-//   2. Mixed-content entries ("60配列", "87键") keep the leading digits
-//      when pinyin-pro passes them through unchanged.
-// Everything else (punctuation, whitespace from pinyin-pro's separator) is
-// stripped so the user types a clean ascii run.
-const sanitizePinyin = (s) =>
-  (s || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-
-// Parse one Chinese line into {key, val}. Used both during editor live-preview
-// and at runtime when older saved lists need a fallback parse.
-//
-// "<hanzi> <pinyin>" (whitespace separated) — explicit override. The user's
-//   pinyin wins, regardless of what pinyin-pro would generate.
-// "<hanzi>" — auto mode: pinyin needs to be filled in by the editor via
-//   pinyin-pro. The parser returns {key: hanzi, val: ""} so callers can detect
-//   the missing pinyin and fill it in async.
-// "<pinyin>" (ASCII only) — pinyin without hanzi hint above.
-const parseChineseLine = (line) => {
-  const parts = line.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return null;
-  if (parts.length >= 2) {
-    const hanzi = parts[0];
-    const pinyin = sanitizePinyin(parts.slice(1).join(""));
-    if (!pinyin) return null;
-    return { key: hanzi, val: pinyin };
-  }
-  const only = parts[0];
-  if (isAsciiToken(only)) {
-    return { key: "", val: only };
-  }
-  // hanzi-only: editor must supply pinyin asynchronously.
-  return { key: only, val: "" };
-};
-
-// Synchronously resolve a list to [{key, val}]. For Chinese, prefer the
-// pre-resolved array (filled in by the editor at save time); fall back to
-// line-by-line parsing for plain-text formats.
+// Resolve a list's text to [{key, val}] — whitespace-split, drop empty.
 export const parseCustomWordsText = (record) => {
   if (!record) return [];
-  const { text, language, resolved } = record;
-  if (language === CHINESE_MODE) {
-    if (Array.isArray(resolved) && resolved.length > 0) return resolved;
-    if (typeof text !== "string" || !text.trim()) return [];
-    return text
-      .split(/\r?\n/)
-      .map(parseChineseLine)
-      .filter((e) => e && e.val); // drop hanzi-only entries with no pinyin yet
-  }
-  // English: whitespace-split, drop empty.
+  const { text } = record;
   if (typeof text !== "string") return [];
   return text
     .trim()
     .split(/\s+/)
     .filter(Boolean)
     .map((w) => ({ key: w, val: w }));
-};
-
-// Async — returns [{key, val}] for Chinese text using pinyin-pro for any
-// hanzi-only lines. Explicit "<hanzi> <pinyin>" overrides are preserved.
-// This is what the editor calls on every change.
-export const resolveChineseText = async (text) => {
-  if (typeof text !== "string" || !text.trim()) return [];
-  const parsedLines = text
-    .split(/\r?\n/)
-    .map((line) => ({ line, parsed: parseChineseLine(line) }))
-    .filter((x) => x.parsed);
-
-  const needsPinyin = parsedLines.filter((x) => x.parsed.key && !x.parsed.val);
-  if (needsPinyin.length === 0) {
-    return parsedLines.map((x) => x.parsed);
-  }
-
-  const { pinyin } = await loadPinyinModule();
-  return parsedLines.map(({ parsed }) => {
-    if (parsed.key && !parsed.val) {
-      const py = sanitizePinyin(
-        pinyin(parsed.key, { toneType: "none", separator: "", type: "string" })
-      );
-      return { key: parsed.key, val: py };
-    }
-    return parsed;
-  });
 };
 
 // Generate `count` words from the parsed list, preserving the user's typed
@@ -273,7 +156,7 @@ export const parseImportedWordListsJson = (jsonString, existingLists = []) => {
   const out = [];
   for (const raw of rawLists) {
     if (!raw || typeof raw !== "object") continue;
-    const language = raw.language === CHINESE_MODE ? CHINESE_MODE : ENGLISH_MODE;
+    const language = ENGLISH_MODE;
     const text = typeof raw.text === "string" ? raw.text : "";
     const name = dedupeName(
       (typeof raw.name === "string" && raw.name.trim()) || "Imported list",
