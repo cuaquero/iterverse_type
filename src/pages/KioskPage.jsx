@@ -149,8 +149,10 @@ const Main = styled.div`
 `;
 
 const Eyebrow = styled.div`
-  font-size: var(--fs-sm);
+  font-size: 11px;
   font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
   color: var(--text-muted);
 `;
 
@@ -160,11 +162,6 @@ const SentenceCard = styled.div`
   font-size: clamp(1.5rem, 3.4vw, 2.5rem);
   font-weight: var(--fw-medium);
   line-height: var(--lh-normal);
-  padding: var(--space-8);
-  border-radius: var(--radius-lg);
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-md);
 `;
 
 const Char = styled.span`
@@ -216,41 +213,31 @@ const ResultCard = styled.div`
 const Wpm = styled.div`
   font-size: clamp(2rem, 5vw, 3.25rem);
   font-weight: var(--fw-bold);
-  color: var(--btech-gray);
+  color: var(--color-brand);
 `;
 
 const TopicBadge = styled.div`
   font-size: var(--fs-sm);
-  color: var(--text-body);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
-  background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
   strong {
-    color: var(--btech-red);
+    color: var(--color-brand);
     font-weight: var(--fw-bold);
   }
 `;
 
 const NextButton = styled.button`
   margin-top: var(--space-2);
-  padding: var(--space-3) var(--space-6);
-  font-size: var(--fs-md);
+  padding: 0;
+  font-size: var(--fs-sm);
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
   border: none;
-  border-radius: var(--radius-md);
-  background: var(--color-brand);
-  color: var(--white);
-  box-shadow: var(--shadow-sm);
+  background: none;
+  color: var(--color-brand);
   cursor: pointer;
-  transition: background var(--dur-base) var(--ease-standard);
+  transition: color var(--dur-base) var(--ease-standard);
   &:hover {
-    background: var(--color-brand-hover);
-  }
-  &:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
+    color: var(--color-brand-hover);
   }
 `;
 
@@ -258,20 +245,21 @@ const LeaderboardPanel = styled.div`
   position: fixed;
   bottom: var(--space-4);
   right: var(--space-4);
-  width: min(240px, calc(100vw - 2 * var(--space-4)));
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-md);
+  width: min(220px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 0.8px solid var(--border-subtle);
   text-align: left;
   z-index: 10;
 `;
 
 const LeaderboardTitle = styled.div`
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  color: var(--btech-gray);
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
   margin-bottom: var(--space-2);
 `;
 
@@ -316,10 +304,9 @@ const InitialsBox = styled.div`
   font-size: var(--fs-2xl);
   font-weight: var(--fw-bold);
   font-family: var(--font-mono);
-  color: ${({ $filled }) => ($filled ? "var(--btech-gray)" : "var(--border-default)")};
-  background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  color: ${({ $filled }) => ($filled ? "var(--text-body)" : "var(--border-default)")};
+  background: transparent;
+  border-bottom: 1px solid var(--border-default);
 `;
 
 const InitialsPrompt = styled.div`
