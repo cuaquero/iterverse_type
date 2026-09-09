@@ -121,6 +121,14 @@ const BannerActions = styled.div`
   flex-shrink: 0;
 `;
 
+const SessionTimer = styled.div`
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+`;
+
 const ModeToggle = styled.button`
   flex-shrink: 0;
   white-space: nowrap;
@@ -305,6 +313,12 @@ const InitialsPrompt = styled.div`
   font-size: var(--fs-sm);
   color: var(--text-muted);
 `;
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 function buildShuffledOrder(count, avoidFirst) {
   const order = Array.from({ length: count }, (_, i) => i);
@@ -491,6 +505,9 @@ const KioskPage = () => {
           <ProductName>Type</ProductName>
         </BrandGroup>
         <BannerActions>
+          {viewMode === "typing" && !sessionEnded && (
+            <SessionTimer>{formatTime(sessionSecondsLeft)}</SessionTimer>
+          )}
           <ModeToggle
             onClick={(e) => {
               e.stopPropagation();
