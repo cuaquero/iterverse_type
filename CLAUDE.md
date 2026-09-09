@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Eletypes is a typing-test web app built with **React 18 + Vite**. It has grown beyond typing tests into four pillars: typing test, vocab cards, **Keyboard Lab** (3D keyboard designer), and a **Markdown editor**. Kiosk mode's same-day leaderboard and everything else live in `localStorage` — there is no backend.
+Eletypes is a typing-test web app built with **React 18 + Vite**. Kiosk mode's same-day leaderboard, practice history, and settings live in `localStorage` — no backend for those. The one exception: the Kiosk/Local History sentence bank lives in a shared Cloudflare D1 database (`functions/api/content-sources`), edited through the Cloudflare Access-gated `/admin` page — see `docs/ACCESS.md` and `src/constants/LOCAL_HISTORY_GUIDE.md`.
 
 Source files use `.jsx` extension (not `.js`) for React components.
 
@@ -71,11 +71,12 @@ Instantiated in `TypeBox` via `new Worker(new URL("../../../worker/...", import.
 
 ### Services Layer (`src/services/`)
 
-Thin wrappers around browser APIs — no backend, everything is `localStorage`:
-- `leaderboard.js` — Kiosk mode's same-day high score board (read/submit WPM scores)
-- `badges.js` — achievement evaluation
-- `scoreHistory.js` — local session history
+Mostly thin wrappers around browser APIs (`localStorage`), with one exception:
+- `leaderboard.js` — Kiosk mode's same-day high score board (read/submit WPM scores), `localStorage`
+- `badges.js` — achievement evaluation, `localStorage`
+- `scoreHistory.js` — local session history, `localStorage`
 - `challengeLink.js` — parses `?challenge=` URL params into a deterministic seeded test (parsed once at module level in `App.jsx`, before any hook runs, then `localStorage` is force-populated so `useLocalPersistState` picks up the overrides on first render)
+- `contentAdmin.js` — the one real backend call in the app: fetches/writes the Kiosk/Local History sentence bank via `/api/content-sources` (Cloudflare D1, see `functions/api/content-sources/` and `docs/ACCESS.md`), falling back to the shipped `LocalHistorySentences.json` only if that fetch fails
 
 ### i18n
 

@@ -1,30 +1,25 @@
 # Local History Content Guide
 
-This pack (`src/assets/Vocab/LocalHistorySentences.json`, exposed as
-`LOCAL_HISTORY_SENTENCES` via `src/constants/LocalHistorySentences.js`) feeds
-**Kiosk mode** (`/kiosk`) and the main app's **Local History** typing mode.
-It's meant for kids and community members walking up with no context, so
-content needs to be short, factual, and appropriate for all ages.
-
-An instructor can also add, edit, or remove entries at runtime — without
-touching code — through the Cloudflare Access-gated editor at `/admin`
-(see `docs/ACCESS.md` and its own in-page notice for how those edits are
-scoped). Editing the JSON directly, as below, is still how content
-actually ships to everyone.
+This content feeds **Kiosk mode** (`/kiosk`) and the main app's **Local
+History** typing mode. It's meant for kids and community members walking
+up with no context, so content needs to be short, factual, and
+appropriate for all ages.
 
 ## Adding a new sentence
 
-Open `src/assets/Vocab/LocalHistorySentences.json` and add another object to
-the array:
+The real, live content lives in a shared Cloudflare D1 database, not a
+file in this repo — add, edit, or remove entries through the Cloudflare
+Access-gated editor at `/admin` (see `docs/ACCESS.md`). Changes there
+apply everywhere immediately, no code change or deploy needed. The style
+rules below still apply to whatever you type in there; the editor checks
+them for you before it lets you save.
 
-```json
-{ "topic": "Cache Valley", "text": "Your new sentence here." }
-```
-
-That's it — no other file needs to change. `topic` is free text; use an
-existing one (`"Bridgerland Technical College"`, `"Cache Valley"`,
-`"Box Elder County"`, `"Utah"`) or introduce a new one if the sentence covers
-a different local topic.
+`src/assets/Vocab/LocalHistorySentences.json` still exists and still
+ships in the build, but only as an offline fallback if `/api/content-
+sources` is ever unreachable — editing it directly no longer changes what
+Kiosk or Local History mode actually show. `topic` is free text; existing
+ones are `"Bridgerland Technical College"`, `"Cache Valley"`, `"Box Elder
+County"`, and `"Utah"`.
 
 ## Style rules
 

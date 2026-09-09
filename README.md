@@ -31,10 +31,12 @@ across projects).
 
 ## What's here
 
-A React 18 + Vite single-page app with no accounts and no backend at all.
-Practice history, themes, Kiosk mode's daily leaderboard, and any content
-edits an instructor makes through `/admin` all live in the browser's
-`localStorage` and never leave the device.
+A React 18 + Vite single-page app with no accounts. Practice history,
+themes, and Kiosk mode's daily leaderboard live in the browser's
+`localStorage` and never leave the device. The one exception is the
+Kiosk/Local History sentence bank, which lives in a small shared
+Cloudflare D1 database (see "Content administration" below) so an
+instructor's edit through `/admin` applies everywhere immediately.
 
 This app has intentionally stayed narrow in scope: it's a typing-practice
 tool and an event kiosk, not a general-purpose platform. Features that
@@ -83,10 +85,14 @@ platform-auth pattern every other Iterverse product uses (see
 `functions/admin/`/`functions/_utils/access.js` for the verification code).
 Signing in is real staff SSO, not an app-level password.
 
-Once signed in, edits are still stored as a per-device `localStorage`
-override on top of the shipped pack (there's no backend for the content
-itself) — they apply immediately on that device but don't sync to other
-kiosks.
+Once signed in, edits go straight to the shared content store (Cloudflare
+D1, via `functions/api/content-sources` — `GET` is public so Kiosk and
+Local History mode can read it with no login; writes require the same
+Access identity as the page itself) — they apply everywhere immediately,
+with no code change or deploy ever needed. `src/assets/Vocab/
+LocalHistorySentences.json` still ships in the build as an offline
+fallback if that fetch ever fails, but it's not the source of truth
+anymore.
 
 ## Local development
 
