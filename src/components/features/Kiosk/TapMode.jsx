@@ -189,6 +189,7 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
   const [flash, setFlash] = useState(null); // { key, state }
   const [correctCount, setCorrectCount] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(roundSeconds);
+  const [hasStarted, setHasStarted] = useState(false);
   const [phase, setPhase] = useState("playing");
   const [message] = useState(() => ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]);
   const [raindrops, setRaindrops] = useState([]);
@@ -200,8 +201,11 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
     inputRef.current?.focus();
   }, [phase]);
 
+  // Doesn't start ticking until the first keypress, same as the main
+  // Typing Challenge and regular mode — otherwise reading the keyboard
+  // before playing eats into the round.
   useEffect(() => {
-    if (phase !== "playing") return;
+    if (phase !== "playing" || !hasStarted) return;
     if (secondsLeft <= 0) {
       setPhase("done");
       playTimeUpChime();
@@ -209,7 +213,7 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
     }
     const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
     return () => clearTimeout(timer);
-  }, [phase, secondsLeft]);
+  }, [phase, secondsLeft, hasStarted]);
 
   useEffect(() => {
     return () => {
@@ -247,6 +251,7 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
   const handleKeyDown = (e) => {
     if (phase !== "playing") return;
     e.preventDefault();
+    if (!hasStarted) setHasStarted(true);
     const pressed = e.key === " " ? " " : e.key.toUpperCase();
     if (pressed === targetKey) {
       setCorrectCount((c) => c + 1);
@@ -260,6 +265,7 @@ const TapMode = ({ onExit, roundSeconds = 30 }) => {
 
   const playAgain = () => {
     setSecondsLeft(roundSeconds);
+    setHasStarted(false);
     setCorrectCount(0);
     setTargetKey(pickNextKey(null));
     setFlash(null);
