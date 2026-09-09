@@ -1,51 +1,15 @@
-// Backs the /admin content editor. There's no backend (see CLAUDE.md) —
+// Backs the /admin content editor. Who can reach this editor at all is
+// Cloudflare Access's job (functions/admin/_middleware.js, docs/ACCESS.md)
+// — this file only handles what the content itself looks like once
+// they're in. There's still no backend for the content (see CLAUDE.md):
 // an instructor's edits are stored as an override layered on top of the
 // shipped LocalHistorySentences.json, scoped to whatever browser/device
-// they're using, exactly like Kiosk's own settings and leaderboard. The
-// passcode gate is a light deterrent against casual tampering on a public
-// kiosk, not real security: the check runs entirely client-side, so anyone
-// determined enough to read the bundle can bypass it.
+// they're using, exactly like Kiosk's own settings and leaderboard.
 import LOCAL_HISTORY_SENTENCES_BASE from "../assets/Vocab/LocalHistorySentences.json";
 
-const PASSCODE_KEY = "admin-passcode";
-const AUTH_KEY = "admin-authenticated";
 const OVERRIDES_KEY = "admin-content-overrides";
 
-export const DEFAULT_PASSCODE = "bridgerland";
-
 const EMPTY_OVERRIDES = { edits: {}, deletes: [], additions: [] };
-
-export const getPasscode = () => {
-  try {
-    return localStorage.getItem(PASSCODE_KEY) || DEFAULT_PASSCODE;
-  } catch {
-    return DEFAULT_PASSCODE;
-  }
-};
-
-export const setPasscode = (newPasscode) => {
-  localStorage.setItem(PASSCODE_KEY, newPasscode);
-};
-
-export const isAuthenticated = () => {
-  try {
-    return sessionStorage.getItem(AUTH_KEY) === "true";
-  } catch {
-    return false;
-  }
-};
-
-// Returns true/false rather than throwing so the login form can just show
-// an inline error on a wrong passcode.
-export const login = (input) => {
-  if (input !== getPasscode()) return false;
-  sessionStorage.setItem(AUTH_KEY, "true");
-  return true;
-};
-
-export const logout = () => {
-  sessionStorage.removeItem(AUTH_KEY);
-};
 
 const readOverrides = () => {
   try {

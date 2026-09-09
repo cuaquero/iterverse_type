@@ -75,15 +75,18 @@ theme picker), typing sounds, and PWA install support.
 
 ## Content administration
 
-`/admin` (not linked from the regular UI — an instructor navigates there
-directly) is a passcode-gated editor for the local-history sentence pack
-that backs Kiosk mode and Local History mode. The default passcode is
-`bridgerland`; change it from within the page after logging in. Since
-there's no backend, edits are stored as a per-device `localStorage`
-override on top of the shipped pack — they apply immediately on that
-device but don't sync to other kiosks. The passcode check is client-side,
-so treat it as a light deterrent against casual tampering, not real
-security.
+`/admin` (reachable from a small icon at the top of the main page) is an
+editor for the local-history sentence pack that backs Kiosk mode and Local
+History mode. It sits behind **Cloudflare Access** — the same
+platform-auth pattern every other Iterverse product uses (see
+[`docs/ACCESS.md`](docs/ACCESS.md) for the Zero Trust setup and
+`functions/admin/`/`functions/_utils/access.js` for the verification code).
+Signing in is real staff SSO, not an app-level password.
+
+Once signed in, edits are still stored as a per-device `localStorage`
+override on top of the shipped pack (there's no backend for the content
+itself) — they apply immediately on that device but don't sync to other
+kiosks.
 
 ## Local development
 

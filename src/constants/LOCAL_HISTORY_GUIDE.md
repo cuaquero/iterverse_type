@@ -7,9 +7,10 @@ It's meant for kids and community members walking up with no context, so
 content needs to be short, factual, and appropriate for all ages.
 
 An instructor can also add, edit, or remove entries at runtime — without
-touching code — through the passcode-gated editor at `/admin` (see its
-own in-page notice for how those edits are scoped). Editing the JSON
-directly, as below, is still how content actually ships to everyone.
+touching code — through the Cloudflare Access-gated editor at `/admin`
+(see `docs/ACCESS.md` and its own in-page notice for how those edits are
+scoped). Editing the JSON directly, as below, is still how content
+actually ships to everyone.
 
 ## Adding a new sentence
 

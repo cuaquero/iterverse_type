@@ -1,0 +1,16 @@
+name = "iterverse-type"
+pages_build_output_dir = "build"
+compatibility_date = "2024-09-23"
+
+# Not secret - a team domain and an audience tag are just identifiers,
+# visible in the Zero Trust dashboard and every Access redirect URL (see
+# iterverse_hub's enroll.ts/admin.ts for the canonical version of this
+# comment). Create the Access Application per docs/ACCESS.md, then get the
+# real AUD from Zero Trust dashboard -> Access -> Applications -> that app
+# -> Overview -> Application Audience (AUD) Tag. The placeholder below
+# fails closed (denies all /admin access) until replaced with the real
+# value - that's intentional, not a bug: better a locked-out admin page
+# than a silently-open one.
+[vars]
+ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com"
+ACCESS_AUD_ADMIN = "REPLACE_WITH_REAL_AUD"

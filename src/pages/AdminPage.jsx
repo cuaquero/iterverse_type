@@ -1,28 +1,30 @@
 /**
- * AdminPage — standalone route at /admin, not linked from anywhere in the
- * regular UI (an instructor navigates here directly). Lets staff edit the
+ * AdminPage — standalone route at /admin. Lets staff edit the
  * Kiosk/Local-History-mode content pack (BTECH, Cache Valley, Box Elder
  * County, Utah facts) without touching code.
  *
- * There's no backend (see CLAUDE.md) — edits are stored as a per-device
- * localStorage override on top of the shipped JSON (src/services/
- * contentAdmin.js), the same way Kiosk's own settings and leaderboard
- * work. The passcode gate is a light deterrent, not real security: it's a
- * client-side check, so treat it as "keep casual hands off," not a lock.
+ * Real authentication happens before this ever loads: functions/admin/
+ * _middleware.js gates the whole /admin/* path behind a verified
+ * Cloudflare Access identity (see docs/ACCESS.md) — the same platform-auth
+ * pattern every other Iterverse product uses. This component never checks
+ * a password itself; by the time it renders, Access has already confirmed
+ * who's signed in, and functions/admin/whoami.js just surfaces that email
+ * for display.
+ *
+ * There's still no backend for the actual content (see CLAUDE.md) — edits
+ * are stored as a per-device localStorage override on top of the shipped
+ * JSON (src/services/contentAdmin.js), the same way Kiosk's own settings
+ * and leaderboard work. Access controls *who can reach this page*; it
+ * doesn't turn the content store into a shared one.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
 import btechMark from "../assets/iterverse/btech-mark.png";
 import { checkEntryText, MIN_LENGTH, MAX_LENGTH } from "../scripts/contentValidation";
 import {
-  isAuthenticated,
-  login,
-  logout,
-  getPasscode,
-  setPasscode,
   getEffectiveSentences,
   addSentence,
   editSentence,
@@ -126,6 +128,13 @@ const ExitLink = styled.a`
   }
 `;
 
+const IdentityLine = styled.span`
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+`;
+
 const LogoutButton = styled.button`
   flex-shrink: 0;
   white-space: nowrap;
@@ -149,16 +158,6 @@ const Main = styled.div`
   padding: var(--space-8) var(--space-4);
 `;
 
-const LoginCard = styled.form`
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  width: min(90vw, 360px);
-  text-align: center;
-`;
-
 const Title = styled.h1`
   font-size: var(--fs-xl);
   font-weight: var(--fw-bold);
@@ -169,22 +168,6 @@ const Subtitle = styled.p`
   font-size: var(--fs-sm);
   color: var(--text-muted);
   margin: 0;
-`;
-
-const PasscodeInput = styled.input`
-  width: 100%;
-  box-sizing: border-box;
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--fs-md);
-  font-family: var(--font-sans);
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  color: var(--text-body);
-  &:focus {
-    outline: 2px solid var(--color-brand);
-    outline-offset: 1px;
-  }
 `;
 
 const PrimaryButton = styled.button`
@@ -214,11 +197,6 @@ const GhostButton = styled.button`
   &:hover {
     background: var(--surface-subtle);
   }
-`;
-
-const ErrorText = styled.div`
-  font-size: var(--fs-sm);
-  color: var(--color-danger);
 `;
 
 const EditorWrap = styled.div`
@@ -362,9 +340,14 @@ const ProblemList = styled.ul`
 const emptyDraft = { topic: "", text: "" };
 
 const AdminPage = () => {
-  const [authed, setAuthed] = useState(() => isAuthenticated());
-  const [passcodeInput, setPasscodeInput] = useState("");
-  const [loginError, setLoginError] = useState(false);
+  const [email, setEmail] = useState(null);
+
+  useEffect(() => {
+    fetch("/admin/whoami")
+      .then((res) => res.json())
+      .then((data) => setEmail(data.email || null))
+      .catch(() => {});
+  }, []);
 
   const [sentences, setSentences] = useState(() => getEffectiveSentences());
   const [editingId, setEditingId] = useState(null); // id being edited, or "new"
@@ -381,20 +364,18 @@ const AdminPage = () => {
     return Array.from(grouped.entries());
   }, [sentences]);
 
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    if (login(passcodeInput)) {
-      setAuthed(true);
-      setLoginError(false);
-      setPasscodeInput("");
-    } else {
-      setLoginError(true);
+  const handleLogout = async () => {
+    // Cloudflare Access's logout endpoint has no return-URL param and signs
+    // the account out of every Access app, not just this one - trigger it
+    // in the background, then send the browser to the marketing page
+    // ourselves (same pattern every other Iterverse product's "Log out"
+    // link uses).
+    try {
+      await fetch("/cdn-cgi/access/logout", { credentials: "include" });
+    } catch {
+      // Ignore - redirect regardless so the user isn't stuck.
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    setAuthed(false);
+    window.location.href = "/";
   };
 
   const startEdit = (entry) => {
@@ -443,65 +424,6 @@ const AdminPage = () => {
     refresh();
   };
 
-  const handleChangePasscode = () => {
-    const next = window.prompt(
-      "New admin passcode for this device (leave blank to cancel):",
-      ""
-    );
-    if (next && next.trim()) setPasscode(next.trim());
-  };
-
-  if (!authed) {
-    return (
-      <Screen>
-        <AdminGlobalStyle />
-        <Banner>
-          <BrandGroup>
-            <svg viewBox="0 0 92 92" width="20" height="20" aria-hidden="true">
-              <polygon
-                points="30,18 62,18 78,46 62,74 30,74 14,46"
-                fill="none"
-                stroke="var(--btech-red)"
-                strokeWidth="11"
-                strokeLinejoin="miter"
-              />
-              <rect x="41.5" y="31" width="9" height="30" fill="currentColor" />
-            </svg>
-            <Wordmark>
-              <strong>iter</strong>
-              <em>verse</em>
-            </Wordmark>{" "}
-            <ProductName>Type</ProductName>
-            <BrandDivider aria-hidden="true" />
-            <BtechMark src={btechMark} alt="Bridgerland Technical College" />
-          </BrandGroup>
-          <ExitLink href="/">Exit</ExitLink>
-        </Banner>
-        <Main>
-          <LoginCard onSubmit={handleLoginSubmit}>
-            <Title>Content Sources admin</Title>
-            <Subtitle>
-              Enter the passcode to edit Kiosk and Local History mode's sentence banks.
-            </Subtitle>
-            <PasscodeInput
-              type="password"
-              autoFocus
-              value={passcodeInput}
-              onChange={(e) => {
-                setPasscodeInput(e.target.value);
-                setLoginError(false);
-              }}
-              placeholder="Passcode"
-              aria-label="Admin passcode"
-            />
-            {loginError && <ErrorText>Incorrect passcode.</ErrorText>}
-            <PrimaryButton type="submit">Log in</PrimaryButton>
-          </LoginCard>
-        </Main>
-      </Screen>
-    );
-  }
-
   return (
     <Screen>
       <AdminGlobalStyle />
@@ -526,7 +448,7 @@ const AdminPage = () => {
           <BtechMark src={btechMark} alt="Bridgerland Technical College" />
         </BrandGroup>
         <HeaderActions>
-          <LogoutButton onClick={handleChangePasscode}>Change passcode</LogoutButton>
+          {email && <IdentityLine>{email}</IdentityLine>}
           <LogoutButton onClick={handleLogout}>Log out</LogoutButton>
           <ExitLink href="/">Exit</ExitLink>
         </HeaderActions>

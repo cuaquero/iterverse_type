@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import CustomizeKioskModal from "../features/Kiosk/CustomizeKioskModal";
 import btechMark from "../../assets/iterverse/btech-mark.png";
 
@@ -39,7 +40,12 @@ const Logo = () => {
           </h1>
         </div>
       </div>
-      <div style={{ position: "absolute", top: "4px", right: "12px" }}>
+      <div style={{ position: "absolute", top: "4px", right: "12px", display: "flex" }}>
+        <Tooltip title="Content admin">
+          <IconButton size="small" href="/admin">
+            <AdminPanelSettingsIcon fontSize="small" className="nav-item" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Customize Kiosk Session">
           <IconButton size="small" onClick={() => setKioskModalOpen(true)}>
             <TouchAppIcon fontSize="small" className="nav-item" />
