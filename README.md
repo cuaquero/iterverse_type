@@ -11,7 +11,9 @@
 Practice typing, or run it as a no-login kiosk station at a BTECH event —
 type on the giant keyboard, see your words-per-minute, and learn a fact
 about BTECH, Cache Valley, Box Elder County, or Utah while you're at it.
-Younger visitors get their own simplified, always-encouraging Kids Mode.
+Visitors who'd rather not read sentences — young kids, students with
+special needs, or anyone just passing by — get their own simplified,
+always-encouraging Tap Mode.
 
 It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [Reader](https://github.com/cuaquero/iterverse_reader),
@@ -57,13 +59,15 @@ removed — see git history if you need to resurrect any of it.
   for how to add more sentences and how new content gets checked before
   it ships. Includes a same-day, arcade-style leaderboard (3-letter
   initials, resets daily) shown right on the kiosk screen.
-- **Kids Mode** (toggle from the Kiosk banner) — repurposes the QWERTY
+- **Tap Mode** (toggle from the Kiosk banner) — repurposes the QWERTY
   trainer's press-the-highlighted-key mechanic into a simple, fixed-length
-  round (45s) for younger visitors: no sentences to read, no leaderboard,
-  and it always ends on an encouraging note regardless of how it went.
+  round (45s) for visitors who'd rather not read sentences — young kids,
+  students with special needs, or anyone just passing by: no sentences to
+  read, no leaderboard, and it always ends on an encouraging note
+  regardless of how it went.
 
-Plus: 18 built-in themes (4 with dynamic WebGL backgrounds), typing
-sounds, and PWA install support.
+Plus: a single fixed dark theme built on BTECH's own brand tokens (no
+theme picker), typing sounds, and PWA install support.
 
 ## Local development
 
