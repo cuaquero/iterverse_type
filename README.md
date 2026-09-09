@@ -8,11 +8,11 @@
   A typing test for Bridgerland Technical College's classrooms and events
 </h3>
 
-Practice typing, or run it as a no-login kiosk station at a BTECH event —
+Practice typing, or run it as a no-login kiosk station at a BTECH event:
 type on the giant keyboard, see your words-per-minute, and learn a fact
 about BTECH, Cache Valley, Box Elder County, or Utah while you're at it.
-Visitors who'd rather not read sentences — young kids, students with
-special needs, or anyone just passing by — get their own simplified,
+Visitors who'd rather not read sentences (young kids, students with
+special needs, or anyone just passing by) get their own simplified,
 always-encouraging Tap Mode.
 
 It's part of **Iterverse**, BTECH IT's umbrella platform alongside
@@ -23,7 +23,7 @@ It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [CLI](https://github.com/cuaquero/iterverse_cli),
 [Packets](https://github.com/cuaquero/iterverse_packets),
 [Scripts](https://github.com/cuaquero/iterverse_scripts), and
-[HelpDesk](https://github.com/cuaquero/iterverse_helpdesk) — see
+[HelpDesk](https://github.com/cuaquero/iterverse_helpdesk). See
 `iterverse_labs`'s `design-system/` for the shared brand tokens and
 Iterverse mark every product draws from (copied locally into
 `src/assets/iterverse/`, per the family convention of no shared build
@@ -41,15 +41,15 @@ tool and an event kiosk, not a general-purpose platform. Features that
 drifted outside that (a 3D keyboard designer, a markdown editor, user
 accounts, badges/stats history, vocab flashcard decks, Chinese Pinyin
 practice content, social share buttons, third-party widgets) have been
-removed — see git history if you need to resurrect any of it.
+removed. See git history if you need to resurrect any of it.
 
 ## Modes
 
-- **Typing test** — word and sentence modes, timed or untimed, pacing
+- **Typing test**: word and sentence modes, timed or untimed, pacing
   styles (pulse/caret), custom word lists.
-- **QWERTY trainer** — guided touch-typing practice on an on-screen
+- **QWERTY trainer**: guided touch-typing practice on an on-screen
   keyboard.
-- **Kiosk mode** (`/kiosk`) — a no-login typing test for walk-up use at
+- **Kiosk mode** (`/kiosk`): a no-login typing test for walk-up use at
   events, styled and paced identically to the regular sentence-typing
   view (same caret indicator, same correct/error color scheme), using a
   local-history sentence pack about BTECH, Cache Valley, Box Elder
@@ -58,10 +58,10 @@ removed — see git history if you need to resurrect any of it.
   for how to add more sentences and how new content gets checked before
   it ships. Includes a same-day, arcade-style leaderboard (3-letter
   initials, resets daily) shown right on the kiosk screen.
-- **Tap Mode** (toggle from the Kiosk banner) — repurposes the QWERTY
+- **Tap Mode** (toggle from the Kiosk banner): repurposes the QWERTY
   trainer's press-the-highlighted-key mechanic into a simple, fixed-length
-  round (45s) for visitors who'd rather not read sentences — young kids,
-  students with special needs, or anyone just passing by: no sentences to
+  round (45s) for visitors who'd rather not read sentences (young kids,
+  students with special needs, or anyone just passing by): no sentences to
   read, no leaderboard, and it always ends on an encouraging note
   regardless of how it went.
 
@@ -87,7 +87,7 @@ npm run check-content
 ```
 
 See [`src/constants/LOCAL_HISTORY_GUIDE.md`](src/constants/LOCAL_HISTORY_GUIDE.md)
-for the full review checklist — the script is a heuristic aid, not a
+for the full review checklist. The script is a heuristic aid, not a
 substitute for reading new content yourself.
 
 ## Deployment
