@@ -1,11 +1,13 @@
 /**
- * KidsMode — a simplified, timed key-mashing game for younger kiosk visitors.
+ * TapMode — a simplified, timed key-mashing game for kiosk visitors who
+ * want something lighter than the full typing challenge (young kids,
+ * students with special needs, or anyone just passing by).
  *
  * Repurposes the same mechanic as the main app's QWERTY Trainer mode
  * (src/components/features/Keyboard/DefaultKeyboard.jsx): press the
  * highlighted key. No sentences to read, no leaderboard, no accuracy
  * grading — a fixed-length round that always ends on an encouraging note
- * regardless of how it went, so a kid can't "lose."
+ * regardless of how it went, so nobody "loses."
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -152,7 +154,7 @@ const Button = styled.button`
   }
 `;
 
-const KidsMode = ({ onExit }) => {
+const TapMode = ({ onExit }) => {
   const [targetKey, setTargetKey] = useState(() => pickNextKey(null));
   const [flash, setFlash] = useState(null); // { key, state }
   const [correctCount, setCorrectCount] = useState(0);
@@ -263,4 +265,4 @@ const KidsMode = ({ onExit }) => {
   );
 };
 
-export default KidsMode;
+export default TapMode;

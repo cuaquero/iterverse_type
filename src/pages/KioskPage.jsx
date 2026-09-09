@@ -17,11 +17,9 @@ import styled, { createGlobalStyle } from "styled-components";
 import "../assets/iterverse/tokens.css";
 import "../assets/iterverse/fonts.css";
 import { submitKioskScore, fetchTodayKioskLeaderboard } from "../services/leaderboard";
-import KidsMode from "../components/features/Kiosk/KidsMode";
+import TapMode from "../components/features/Kiosk/TapMode";
 import { loadKioskSettings, buildSentencePool, buildWordPool } from "../services/kioskSettings";
 
-const AUTO_ADVANCE_MS = 8000;
-const POST_SUBMIT_ADVANCE_MS = 2500;
 const LEADERBOARD_REFRESH_MS = 20000;
 const INITIALS_LENGTH = 3;
 const BANNER_HEIGHT = "64px";
@@ -199,47 +197,10 @@ const HiddenInput = styled.input`
   height: 1px;
 `;
 
-const Prompt = styled.div`
-  font-size: var(--fs-base);
-  color: var(--text-muted);
-`;
-
-const ResultCard = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-`;
-
 const Wpm = styled.div`
   font-size: clamp(2rem, 5vw, 3.25rem);
   font-weight: var(--fw-bold);
   color: var(--color-brand);
-`;
-
-const TopicBadge = styled.div`
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  strong {
-    color: var(--color-brand);
-    font-weight: var(--fw-bold);
-  }
-`;
-
-const NextButton = styled.button`
-  margin-top: var(--space-2);
-  padding: 0;
-  font-size: var(--fs-sm);
-  font-family: var(--font-sans);
-  font-weight: var(--fw-medium);
-  border: none;
-  background: none;
-  color: var(--color-brand);
-  cursor: pointer;
-  transition: color var(--dur-base) var(--ease-standard);
-  &:hover {
-    color: var(--color-brand-hover);
-  }
 `;
 
 const SessionEndCard = styled.div`
@@ -367,18 +328,16 @@ const KioskPage = () => {
   const [order, setOrder] = useState(() => buildShuffledOrder(sentences.length));
   const [pointer, setPointer] = useState(0);
   const [typed, setTyped] = useState("");
-  const [startTime, setStartTime] = useState(null);
-  const [finished, setFinished] = useState(false);
-  const [wpm, setWpm] = useState(0);
   const [leaderboard, setLeaderboard] = useState([]);
   const [initials, setInitials] = useState("");
   const [initialsSubmitted, setInitialsSubmitted] = useState(false);
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState(settings.sessionSeconds);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [finalWpm, setFinalWpm] = useState(0);
   const inputRef = useRef(null);
   const initialsInputRef = useRef(null);
-  const advanceTimerRef = useRef(null);
   const sentenceCardRef = useRef(null);
+  const completedWordCountRef = useRef(0);
   const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
@@ -388,7 +347,7 @@ const KioskPage = () => {
   // regular mode's caret pacing style points, instead of Kiosk having no
   // position indicator at all.
   useEffect(() => {
-    if (finished || !sentenceCardRef.current) {
+    if (sessionEnded || !sentenceCardRef.current) {
       setCaretPos((p) => ({ ...p, visible: false }));
       return;
     }
@@ -406,16 +365,16 @@ const KioskPage = () => {
       setCaretPos({ x, y, height: charRect.height, visible: true });
     });
     return () => cancelAnimationFrame(frame);
-  }, [typed, finished, current]);
+  }, [typed, sessionEnded, current]);
 
   const focusInput = useCallback(() => {
     if (viewMode !== "typing") return;
-    if (finished) {
+    if (sessionEnded) {
       initialsInputRef.current?.focus();
     } else {
       inputRef.current?.focus();
     }
-  }, [finished, viewMode]);
+  }, [sessionEnded, viewMode]);
 
   useEffect(() => {
     focusInput();
@@ -432,70 +391,62 @@ const KioskPage = () => {
     return () => clearInterval(interval);
   }, [loadLeaderboard]);
 
-  const goToNext = useCallback(() => {
-    if (advanceTimerRef.current) {
-      clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
-    }
-    if (sessionSecondsLeft <= 0) {
-      setSessionEnded(true);
-      return;
-    }
-    setTyped("");
-    setStartTime(null);
-    setFinished(false);
-    setInitials("");
-    setInitialsSubmitted(false);
-    setPointer((prevPointer) => {
-      const nextPointer = prevPointer + 1;
-      if (nextPointer >= order.length) {
-        setOrder(buildShuffledOrder(sentences.length, order[prevPointer]));
-        return 0;
-      }
-      return nextPointer;
-    });
-  }, [order, sentences.length, sessionSecondsLeft]);
-
-  // Session countdown — a fresh session (new pool shuffle, reset timer)
-  // starts once staff-configured seconds run out, per Customize Kiosk.
+  // Session countdown — a real time limit (distinct from the old per-
+  // sentence pacing): typing flows continuously, sentence to sentence,
+  // with no stop-and-see-your-WPM pause, until this hits zero — matching
+  // how the regular app's own timed modes behave, per Customize Kiosk.
+  // Depends only on the tick itself (not on typed/completedWordCountRef)
+  // so completing a sentence never resets the 1s cadence.
   useEffect(() => {
     if (sessionEnded) return;
     const timer = setTimeout(() => {
-      setSessionSecondsLeft((s) => Math.max(s - 1, 0));
+      setSessionSecondsLeft((s) => {
+        if (s <= 1) {
+          const rawWpm = Math.round(
+            completedWordCountRef.current / (settings.sessionSeconds / 60)
+          );
+          setFinalWpm(Math.min(rawWpm, 250));
+          setSessionEnded(true);
+          return 0;
+        }
+        return s - 1;
+      });
     }, 1000);
     return () => clearTimeout(timer);
-  }, [sessionSecondsLeft, sessionEnded]);
+  }, [sessionSecondsLeft, sessionEnded, settings.sessionSeconds]);
 
   const startNewSession = useCallback(() => {
     const freshSettings = loadKioskSettings();
     setSettings(freshSettings);
     setSessionSecondsLeft(freshSettings.sessionSeconds);
     setSessionEnded(false);
+    setFinalWpm(0);
+    completedWordCountRef.current = 0;
     setOrder(buildShuffledOrder(sentences.length));
     setPointer(0);
     setTyped("");
-    setStartTime(null);
-    setFinished(false);
     setInitials("");
     setInitialsSubmitted(false);
   }, [sentences.length]);
 
   const handleChange = (e) => {
-    if (finished) return;
+    if (sessionEnded) return;
     const value = e.target.value;
-    if (startTime == null && value.length > 0) {
-      setStartTime(Date.now());
-    }
     if (value.length > current.text.length) return;
     setTyped(value);
 
     if (value === current.text) {
-      const elapsedMs = Math.max(Date.now() - (startTime ?? Date.now()), 1000);
       const wordCount = current.text.trim().split(/\s+/).length;
-      const rawWpm = Math.round(wordCount / (elapsedMs / 60000));
-      setWpm(Math.min(rawWpm, 250));
-      setFinished(true);
-      advanceTimerRef.current = setTimeout(goToNext, AUTO_ADVANCE_MS);
+      completedWordCountRef.current += wordCount;
+      setTyped("");
+      setPointer((prevPointer) => {
+        const nextPointer = prevPointer + 1;
+        if (nextPointer >= order.length) {
+          setOrder(buildShuffledOrder(sentences.length, order[prevPointer]));
+          return 0;
+        }
+        return nextPointer;
+      });
     }
   };
 
@@ -510,21 +461,13 @@ const KioskPage = () => {
   };
 
   useEffect(() => {
-    if (!finished || initialsSubmitted || initials.length < INITIALS_LENGTH) return;
+    if (!sessionEnded || initialsSubmitted || initials.length < INITIALS_LENGTH) return;
     setInitialsSubmitted(true);
     (async () => {
-      await submitKioskScore({ initials, wpm });
+      await submitKioskScore({ initials, wpm: finalWpm });
       await loadLeaderboard();
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = setTimeout(goToNext, POST_SUBMIT_ADVANCE_MS);
     })();
-  }, [finished, initials, initialsSubmitted, wpm, goToNext, loadLeaderboard]);
-
-  useEffect(() => {
-    return () => {
-      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-    };
-  }, []);
+  }, [sessionEnded, initials, initialsSubmitted, finalWpm, loadLeaderboard]);
 
   return (
     <Screen onClick={focusInput}>
@@ -551,17 +494,17 @@ const KioskPage = () => {
           <ModeToggle
             onClick={(e) => {
               e.stopPropagation();
-              setViewMode(viewMode === "kids" ? "typing" : "kids");
+              setViewMode(viewMode === "tap" ? "typing" : "tap");
             }}
           >
-            {viewMode === "kids" ? "Typing Challenge" : "Kids Mode"}
+            {viewMode === "tap" ? "Typing Challenge" : "Tap Mode"}
           </ModeToggle>
           <ExitLink href="/">Exit kiosk mode</ExitLink>
         </BannerActions>
       </Banner>
 
-      {viewMode === "kids" ? (
-        <KidsMode onExit={() => setViewMode("typing")} />
+      {viewMode === "tap" ? (
+        <TapMode onExit={() => setViewMode("typing")} />
       ) : (
       <Main>
         <HiddenInput
@@ -576,47 +519,7 @@ const KioskPage = () => {
         {sessionEnded ? (
           <SessionEndCard>
             <SessionEndMessage>Thanks for stopping by!</SessionEndMessage>
-            <RestartButton onClick={(e) => { e.stopPropagation(); startNewSession(); }}>
-              Start New Session
-            </RestartButton>
-          </SessionEndCard>
-        ) : !finished ? (
-          <>
-            <Eyebrow>
-              {settings.mode === "word"
-                ? "Typing challenge — word practice"
-                : current.topic
-                ? "Typing challenge — local history edition"
-                : "Typing challenge — sentence practice"}
-            </Eyebrow>
-            <SentenceCard ref={sentenceCardRef}>
-              {current.text.split("").map((char, i) => {
-                const state =
-                  i >= typed.length ? "pending" : typed[i] === char ? "correct" : "wrong";
-                return (
-                  <Char key={i} data-char-index={i} $state={state} $isSpace={char === " "}>
-                    {char}
-                  </Char>
-                );
-              })}
-              <Caret
-                $x={caretPos.x}
-                $y={caretPos.y}
-                $height={caretPos.height}
-                $visible={caretPos.visible}
-              />
-            </SentenceCard>
-            <Prompt>Start typing on the keyboard — no login required.</Prompt>
-          </>
-        ) : (
-          <ResultCard>
-            <Eyebrow>Nice work.</Eyebrow>
-            <Wpm>{wpm} WPM</Wpm>
-            {current.topic && (
-              <TopicBadge>
-                <strong>Did you know?</strong> {current.topic}
-              </TopicBadge>
-            )}
+            <Wpm>{finalWpm} WPM</Wpm>
 
             {initialsSubmitted ? (
               <InitialsPrompt>You're on today's leaderboard!</InitialsPrompt>
@@ -639,15 +542,33 @@ const KioskPage = () => {
               </>
             )}
 
-            <NextButton
-              onClick={(e) => {
-                e.stopPropagation();
-                goToNext();
-              }}
-            >
-              Next sentence
-            </NextButton>
-          </ResultCard>
+            <RestartButton onClick={(e) => { e.stopPropagation(); startNewSession(); }}>
+              Start New Session
+            </RestartButton>
+          </SessionEndCard>
+        ) : (
+          <>
+            <Eyebrow>
+              {settings.mode === "word" ? "Word practice" : current.topic || "Sentence practice"}
+            </Eyebrow>
+            <SentenceCard ref={sentenceCardRef}>
+              {current.text.split("").map((char, i) => {
+                const state =
+                  i >= typed.length ? "pending" : typed[i] === char ? "correct" : "wrong";
+                return (
+                  <Char key={i} data-char-index={i} $state={state} $isSpace={char === " "}>
+                    {char}
+                  </Char>
+                );
+              })}
+              <Caret
+                $x={caretPos.x}
+                $y={caretPos.y}
+                $height={caretPos.height}
+                $visible={caretPos.visible}
+              />
+            </SentenceCard>
+          </>
         )}
       </Main>
       )}
