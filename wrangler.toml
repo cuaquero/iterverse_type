@@ -14,3 +14,11 @@ compatibility_date = "2024-09-23"
 [vars]
 ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com"
 ACCESS_AUD_ADMIN = "3e7dff01838292b5937941b2a85db712520f4a31a3fdce667a833a12788983e6"
+
+# Shared content-sources store (the Kiosk/Local History sentence bank) -
+# lets /admin edits apply everywhere immediately instead of the old
+# per-device localStorage override. See migrations/ for schema.
+[[d1_databases]]
+binding = "DB"
+database_name = "iterverse-type-content"
+database_id = "ce5a1778-ba9b-4c2c-8137-c3827efa67d4"
