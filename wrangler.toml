@@ -13,4 +13,4 @@ compatibility_date = "2024-09-23"
 # than a silently-open one.
 [vars]
 ACCESS_TEAM_DOMAIN = "dawn-mountain-9c54.cloudflareaccess.com"
-ACCESS_AUD_ADMIN = "REPLACE_WITH_REAL_AUD"
+ACCESS_AUD_ADMIN = "3e7dff01838292b5937941b2a85db712520f4a31a3fdce667a833a12788983e6"
