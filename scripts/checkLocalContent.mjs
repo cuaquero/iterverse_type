@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { BANNED_WORD_PATTERN } from "../src/constants/bannedWords.js";
+import { checkEntryText } from "../src/scripts/contentValidation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_TARGET = path.join(
@@ -22,46 +22,14 @@ const DEFAULT_TARGET = path.join(
   "LocalHistorySentences.json"
 );
 
-const MIN_LENGTH = 10;
-const MAX_LENGTH = 220;
-
-const URL_PATTERN = /\bhttps?:\/\/|www\./i;
-const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-const PHONE_PATTERN = /\b(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b/;
-
-function checkEntry(entry, index) {
-  const problems = [];
-  const text = typeof entry === "string" ? entry : entry?.text;
-
-  if (typeof text !== "string" || text.trim().length === 0) {
-    problems.push("missing or empty `text`");
-    return problems;
+function checkEntry(entry) {
+  if (typeof entry === "string") {
+    return checkEntryText(entry);
   }
-  if (typeof entry === "object" && (typeof entry.topic !== "string" || entry.topic.trim().length === 0)) {
-    problems.push("missing or empty `topic`");
-  }
-  if (text.length < MIN_LENGTH) {
-    problems.push(`too short (${text.length} chars, minimum ${MIN_LENGTH})`);
-  }
-  if (text.length > MAX_LENGTH) {
-    problems.push(`too long (${text.length} chars, maximum ${MAX_LENGTH})`);
-  }
-
-  const bannedMatch = text.match(BANNED_WORD_PATTERN);
-  if (bannedMatch) {
-    problems.push(`contains a flagged word: "${bannedMatch[0]}"`);
-  }
-  if (URL_PATTERN.test(text)) {
-    problems.push("contains a URL");
-  }
-  if (EMAIL_PATTERN.test(text)) {
-    problems.push("contains an email address");
-  }
-  if (PHONE_PATTERN.test(text)) {
-    problems.push("contains a phone number");
-  }
-
-  return problems;
+  // Object entries always carry a topic check (empty string still trips
+  // checkEntryText's "missing or empty topic" problem); plain-string
+  // entries have no topic concept at all, so that check is skipped above.
+  return checkEntryText(entry?.text, entry?.topic ?? "");
 }
 
 function main() {

@@ -2,10 +2,14 @@
 
 This pack (`src/assets/Vocab/LocalHistorySentences.json`, exposed as
 `LOCAL_HISTORY_SENTENCES` via `src/constants/LocalHistorySentences.js`) feeds
-**Kiosk mode** (`/kiosk`) — the simplified typing test used at public events
-with the giant keyboard. It's meant for kids and community members walking
-up with no context, so content needs to be short, factual, and appropriate
-for all ages.
+**Kiosk mode** (`/kiosk`) and the main app's **Local History** typing mode.
+It's meant for kids and community members walking up with no context, so
+content needs to be short, factual, and appropriate for all ages.
+
+An instructor can also add, edit, or remove entries at runtime — without
+touching code — through the passcode-gated editor at `/admin` (see its
+own in-page notice for how those edits are scoped). Editing the JSON
+directly, as below, is still how content actually ships to everyone.
 
 ## Adding a new sentence
 

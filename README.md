@@ -32,9 +32,9 @@ across projects).
 ## What's here
 
 A React 18 + Vite single-page app with no accounts and no backend at all.
-Practice history, themes, custom word lists, and Kiosk mode's daily
-leaderboard all live in the browser's `localStorage` and never leave the
-device.
+Practice history, themes, Kiosk mode's daily leaderboard, and any content
+edits an instructor makes through `/admin` all live in the browser's
+`localStorage` and never leave the device.
 
 This app has intentionally stayed narrow in scope: it's a typing-practice
 tool and an event kiosk, not a general-purpose platform. Features that
@@ -45,8 +45,10 @@ removed. See git history if you need to resurrect any of it.
 
 ## Modes
 
-- **Typing test**: word and sentence modes, timed or untimed, pacing
-  styles (pulse/caret), custom word lists.
+- **Typing test**: word, sentence, and local-history modes, timed or
+  untimed, pacing styles (pulse/caret). Word mode always draws from the
+  built-in random word list. Local History mode reuses Kiosk's own
+  BTECH/Cache Valley/Box Elder County/Utah sentence pack.
 - **QWERTY trainer**: guided touch-typing practice on an on-screen
   keyboard.
 - **Kiosk mode** (`/kiosk`): a no-login typing test for walk-up use at
@@ -70,6 +72,18 @@ removed. See git history if you need to resurrect any of it.
 
 Plus: a single fixed dark theme built on BTECH's own brand tokens (no
 theme picker), typing sounds, and PWA install support.
+
+## Content administration
+
+`/admin` (not linked from the regular UI — an instructor navigates there
+directly) is a passcode-gated editor for the local-history sentence pack
+that backs Kiosk mode and Local History mode. The default passcode is
+`bridgerland`; change it from within the page after logging in. Since
+there's no backend, edits are stored as a per-device `localStorage`
+override on top of the shipped pack — they apply immediately on that
+device but don't sync to other kiosks. The passcode check is client-side,
+so treat it as a light deterrent against casual tampering, not real
+security.
 
 ## Local development
 
@@ -97,8 +111,8 @@ substitute for reading new content yourself.
 
 Live at **type.iterverse.net**, deployed on **Cloudflare Pages** (build
 command `npm run build`, build output directory `build/`).
-`public/_redirects` carries the SPA-fallback rewrite Pages needs for the
-`/kiosk` client-side route.
+`public/_redirects` carries the SPA-fallback rewrite Pages needs for
+client-side routes like `/kiosk` and `/admin`.
 
 ## License
 
