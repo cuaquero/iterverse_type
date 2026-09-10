@@ -47,6 +47,41 @@ app → Overview → Application Audience (AUD) Tag) and redeploying. Until a
 real value replaces `REPLACE_WITH_REAL_AUD`, `/admin` fails closed — every
 request is rejected, rather than silently open.
 
+## Access gates by path, not by HTTP method
+
+The Content Sources API (`functions/api/content-sources/` and `functions/
+admin/api/content-sources/`) needed a public read alongside a staff-only
+write, and there's no way to get both on the *same* path through a single
+Access Application — Access either covers a path or it doesn't, regardless
+of GET vs. POST. The fix: reads live at `/api/content-sources` (no Access
+Application covers it, genuinely public), and writes live at `/admin/api/
+content-sources` specifically so they inherit the Access Application above
+instead of needing a second one. Learned the hard way: the first version
+put both at `/api/content-sources` with an app-level method check
+(`_middleware.js` calling `requireAccess` only for non-GET) — that looked
+right in testing (an unauthenticated POST correctly got a 401) but was
+actually broken for everyone, since Access never attached a `Cf-Access-
+Jwt-Assertion` header to that path at all, for anyone, so even a real
+signed-in instructor's write got rejected by the very same check. If you
+add another gated write endpoint, nest it under `/admin/` (or another
+already-Access-covered prefix) rather than trying to gate a path Access
+itself never touches.
+
+## The PWA service worker can silently swallow Access entirely
+
+`vite-plugin-pwa`'s generated service worker serves the cached app shell
+for any navigation it doesn't otherwise recognize, entirely client-side,
+before a request ever reaches the network. That includes `/admin` itself
+(the gated page loads from cache with no login prompt — the request never
+even reaches Cloudflare's edge, let alone this app's origin) and
+Cloudflare's own Access login callback (`/cdn-cgi/access/authorized?...`),
+which needs to hit the real network to get the cookie-setting redirect
+Access issues on a real sign-in. Both are excluded via `vite.config.js`'s
+`navigateFallbackDenylist` — see that file's comment. Any new Access-gated
+route needs the same exclusion, or it'll silently work for nobody (or
+worse, look like it's gating correctly while actually serving cached
+content to everyone) the same way both of these did before that fix.
+
 ## Local development
 
 `npm run dev` (plain Vite) doesn't run Pages Functions at all, so `/admin`

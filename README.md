@@ -86,13 +86,16 @@ platform-auth pattern every other Iterverse product uses (see
 Signing in is real staff SSO, not an app-level password.
 
 Once signed in, edits go straight to the shared content store (Cloudflare
-D1, via `functions/api/content-sources` — `GET` is public so Kiosk and
-Local History mode can read it with no login; writes require the same
-Access identity as the page itself) — they apply everywhere immediately,
-with no code change or deploy ever needed. `src/assets/Vocab/
-LocalHistorySentences.json` still ships in the build as an offline
-fallback if that fetch ever fails, but it's not the source of truth
-anymore.
+D1). Reads and writes are deliberately split across two paths, since
+Cloudflare Access gates by path rather than HTTP method: `GET
+/api/content-sources` is public (no Access Application covers it) so
+Kiosk and Local History mode can read it with no login, while
+add/edit/delete live at `/admin/api/content-sources` and inherit the same
+Access gate as the `/admin` page itself. Edits apply everywhere
+immediately, with no code change or deploy ever needed.
+`src/assets/Vocab/LocalHistorySentences.json` still ships in the build as
+an offline fallback if the read fetch ever fails, but it's not the source
+of truth anymore.
 
 ## Local development
 
@@ -119,7 +122,10 @@ substitute for reading new content yourself.
 ## Deployment
 
 Live at **type.iterverse.net**, deployed on **Cloudflare Pages** (build
-command `npm run build`, build output directory `build/`).
+command `npm run build`, build output directory `build/`) via `npx
+wrangler pages deploy build --project-name=iterverse-type`, which also
+picks up `functions/` (the Content Sources API and Access verification)
+and `wrangler.toml`'s D1 binding and Access vars automatically.
 `public/_redirects` carries the SPA-fallback rewrite Pages needs for
 client-side routes like `/kiosk` and `/admin`.
 
