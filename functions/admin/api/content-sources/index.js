@@ -8,9 +8,12 @@
 // (functions/api/content-sources/index.js), a path no Access Application
 // covers at all.
 import { jsonResponse } from "../../../_utils/json.js";
+import { isSameOriginRequest } from "../../../_utils/csrf.js";
 import { checkEntryText } from "../../../../src/scripts/contentValidation.js";
 
 export async function onRequestPost({ request, env }) {
+  if (!isSameOriginRequest(request)) return jsonResponse({ error: "Forbidden" }, 403);
+
   let body;
   try {
     body = await request.json();

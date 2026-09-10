@@ -2,9 +2,12 @@
 // directory for why writes live under /admin/ (inherits the existing
 // Access gate from functions/admin/_middleware.js automatically).
 import { jsonResponse } from "../../../_utils/json.js";
+import { isSameOriginRequest } from "../../../_utils/csrf.js";
 import { checkEntryText } from "../../../../src/scripts/contentValidation.js";
 
 export async function onRequestPatch({ request, env, params }) {
+  if (!isSameOriginRequest(request)) return jsonResponse({ error: "Forbidden" }, 403);
+
   let body;
   try {
     body = await request.json();
@@ -19,18 +22,25 @@ export async function onRequestPatch({ request, env, params }) {
     return jsonResponse({ error: "Failed content checks", problems }, 400);
   }
 
-  const { success } = await env.DB
+  const { meta } = await env.DB
     .prepare(
       "UPDATE content_sources SET topic = ?, text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     )
     .bind(topic, text, params.id)
     .run();
 
-  if (!success) return jsonResponse({ error: "Not found" }, 404);
+  if (!meta.changes) return jsonResponse({ error: "Not found" }, 404);
   return jsonResponse({ id: params.id, topic, text });
 }
 
-export async function onRequestDelete({ env, params }) {
-  await env.DB.prepare("DELETE FROM content_sources WHERE id = ?").bind(params.id).run();
+export async function onRequestDelete({ request, env, params }) {
+  if (!isSameOriginRequest(request)) return jsonResponse({ error: "Forbidden" }, 403);
+
+  const { meta } = await env.DB
+    .prepare("DELETE FROM content_sources WHERE id = ?")
+    .bind(params.id)
+    .run();
+
+  if (!meta.changes) return jsonResponse({ error: "Not found" }, 404);
   return jsonResponse({ ok: true });
 }
