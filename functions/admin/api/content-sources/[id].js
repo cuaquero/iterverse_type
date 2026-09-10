@@ -1,8 +1,8 @@
-// Update/delete a single Content Sources entry. Both gated by
-// _middleware.js (any method other than GET requires a verified Access
-// identity).
-import { jsonResponse } from "../../_utils/json.js";
-import { checkEntryText } from "../../../src/scripts/contentValidation.js";
+// Update/delete a single Content Sources entry - see index.js in this same
+// directory for why writes live under /admin/ (inherits the existing
+// Access gate from functions/admin/_middleware.js automatically).
+import { jsonResponse } from "../../../_utils/json.js";
+import { checkEntryText } from "../../../../src/scripts/contentValidation.js";
 
 export async function onRequestPatch({ request, env, params }) {
   let body;
