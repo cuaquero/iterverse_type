@@ -20,7 +20,7 @@ It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [Hub](https://github.com/cuaquero/iterverse_hub),
 [Labs](https://github.com/cuaquero/iterverse_labs),
 [Simulations](https://github.com/cuaquero/iterverse_simulations),
-[CLI](https://github.com/cuaquero/iterverse_cli),
+[Terminal](https://github.com/cuaquero/iterverse_terminal),
 [Packets](https://github.com/cuaquero/iterverse_packets),
 [Scripts](https://github.com/cuaquero/iterverse_scripts), and
 [HelpDesk](https://github.com/cuaquero/iterverse_helpdesk). See
