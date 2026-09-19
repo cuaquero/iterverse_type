@@ -22,8 +22,9 @@ It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [Simulations](https://github.com/cuaquero/iterverse_simulations),
 [Terminal](https://github.com/cuaquero/iterverse_terminal),
 [Packets](https://github.com/cuaquero/iterverse_packets),
-[Scripts](https://github.com/cuaquero/iterverse_scripts), and
-[HelpDesk](https://github.com/cuaquero/iterverse_helpdesk). See
+[Scripts](https://github.com/cuaquero/iterverse_scripts),
+[HelpDesk](https://github.com/cuaquero/iterverse_helpdesk), and
+[Scheduler](https://github.com/cuaquero/iterverse_scheduler). See
 `iterverse_labs`'s `design-system/` for the shared brand tokens and
 Iterverse mark every product draws from (copied locally into
 `src/assets/iterverse/`, per the family convention of no shared build
@@ -131,4 +132,4 @@ client-side routes like `/kiosk` and `/admin`.
 
 ## License
 
-[GPL-3.0](LICENSE).
+[GPL-3.0](LICENSE), forked from [eletypes-frontend](https://github.com/gamer-ai/eletypes-frontend), same license upstream.
