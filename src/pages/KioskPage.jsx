@@ -421,7 +421,16 @@ const KioskPage = () => {
   const inputRef = useRef(null);
   const initialsInputRef = useRef(null);
   const sentenceCardRef = useRef(null);
-  const completedWordCountRef = useRef(0);
+  // Counts every printable keystroke typed during the session, not just
+  // words from sentences completed with zero errors. Counting only
+  // flawless completions (the old approach) meant a single missed letter
+  // left a visitor typing at full speed but permanently misaligned until
+  // they backspaced back to the mistake - that sentence's words never
+  // counted, which is why the final WPM often read ~0 despite normal
+  // typing speed. Raw keystroke counting mirrors SentenceBox.jsx's
+  // rawKeyStroke, the same "typing throughput" metric used elsewhere in
+  // this app's sentence mode.
+  const keystrokeCountRef = useRef(0);
   const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
@@ -512,8 +521,8 @@ const KioskPage = () => {
   // sentence pacing): typing flows continuously, sentence to sentence,
   // with no stop-and-see-your-WPM pause, until this hits zero — matching
   // how the regular app's own timed modes behave, per Customize Kiosk.
-  // Depends only on the tick itself (not on typed/completedWordCountRef)
-  // so completing a sentence never resets the 1s cadence. Doesn't start
+  // Depends only on the tick itself (not on typed/keystrokeCountRef) so
+  // completing a sentence never resets the 1s cadence. Doesn't start
   // ticking until the visitor's first keystroke, same as regular mode —
   // otherwise reading the prompt before typing eats into the time limit.
   useEffect(() => {
@@ -522,7 +531,7 @@ const KioskPage = () => {
       setSessionSecondsLeft((s) => {
         if (s <= 1) {
           const rawWpm = Math.round(
-            completedWordCountRef.current / (settings.sessionSeconds / 60)
+            keystrokeCountRef.current / 5 / (settings.sessionSeconds / 60)
           );
           setFinalWpm(Math.min(rawWpm, 250));
           setSessionEnded(true);
@@ -542,7 +551,7 @@ const KioskPage = () => {
     setHasStartedTyping(false);
     setSessionEnded(false);
     setFinalWpm(0);
-    completedWordCountRef.current = 0;
+    keystrokeCountRef.current = 0;
     setOrder(buildShuffledOrder(sentences.length));
     setPointer(0);
     setTyped("");
@@ -558,8 +567,6 @@ const KioskPage = () => {
     setTyped(value);
 
     if (value === current.text) {
-      const wordCount = current.text.trim().split(/\s+/).length;
-      completedWordCountRef.current += wordCount;
       setTyped("");
       setPointer((prevPointer) => {
         const nextPointer = prevPointer + 1;
@@ -574,6 +581,21 @@ const KioskPage = () => {
 
   const handleKeyDown = (e) => {
     if (e.key === "Tab") e.preventDefault();
+    // Credit every printable keystroke toward WPM as it happens, not just
+    // ones that end up in a perfectly-typed sentence - see keystrokeCountRef
+    // above for why. Mirrors TypeBox.jsx's wpmKeyStrokes filter: single
+    // printable characters only, excluding modifier-held combos (Ctrl+A,
+    // Cmd+C, etc.) which aren't real char input.
+    if (
+      !sessionEnded &&
+      e.key &&
+      e.key.length === 1 &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey
+    ) {
+      keystrokeCountRef.current += 1;
+    }
   };
 
   const handleInitialsChange = (e) => {
