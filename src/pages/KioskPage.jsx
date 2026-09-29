@@ -437,16 +437,17 @@ const KioskPage = () => {
   const inputRef = useRef(null);
   const initialsInputRef = useRef(null);
   const sentenceCardRef = useRef(null);
-  // Counts every printable keystroke typed during the session, not just
-  // words from sentences completed with zero errors. Counting only
-  // flawless completions (the old approach) meant a single missed letter
-  // left a visitor typing at full speed but permanently misaligned until
-  // they backspaced back to the mistake - that sentence's words never
-  // counted, which is why the final WPM often read ~0 despite normal
-  // typing speed. Raw keystroke counting mirrors SentenceBox.jsx's
-  // rawKeyStroke, the same "typing throughput" metric used elsewhere in
-  // this app's sentence mode.
-  const keystrokeCountRef = useRef(0);
+  // Counts characters typed correctly against the target sentence, judged
+  // position-by-position as they're typed - not just words from sentences
+  // completed with zero errors (the pre-existing bug: a single missed
+  // letter left a visitor typing at full speed but permanently misaligned
+  // until they backspaced back to the mistake, so that whole sentence's
+  // words never counted and the final WPM often read ~0 despite normal
+  // typing speed) and not simply every keystroke regardless of correctness
+  // (which credited mashing random keys as full-speed typing with no
+  // accuracy check at all). See the diff logic in handleChange for how
+  // this is credited and un-credited on backspace.
+  const correctKeystrokeCountRef = useRef(0);
   const [caretPos, setCaretPos] = useState({ x: 0, y: 0, height: 0, visible: false });
 
   const current = sentences[order[pointer]];
@@ -537,8 +538,8 @@ const KioskPage = () => {
   // sentence pacing): typing flows continuously, sentence to sentence,
   // with no stop-and-see-your-WPM pause, until this hits zero — matching
   // how the regular app's own timed modes behave, per Customize Kiosk.
-  // Depends only on the tick itself (not on typed/keystrokeCountRef) so
-  // completing a sentence never resets the 1s cadence. Doesn't start
+  // Depends only on the tick itself (not on typed/correctKeystrokeCountRef)
+  // so completing a sentence never resets the 1s cadence. Doesn't start
   // ticking until the visitor's first keystroke, same as regular mode —
   // otherwise reading the prompt before typing eats into the time limit.
   useEffect(() => {
@@ -547,7 +548,7 @@ const KioskPage = () => {
       setSessionSecondsLeft((s) => {
         if (s <= 1) {
           const rawWpm = Math.round(
-            keystrokeCountRef.current / 5 / (settings.sessionSeconds / 60)
+            correctKeystrokeCountRef.current / 5 / (settings.sessionSeconds / 60)
           );
           setFinalWpm(Math.min(rawWpm, 250));
           setSessionEnded(true);
@@ -567,7 +568,7 @@ const KioskPage = () => {
     setHasStartedTyping(false);
     setSessionEnded(false);
     setFinalWpm(0);
-    keystrokeCountRef.current = 0;
+    correctKeystrokeCountRef.current = 0;
     setOrder(buildShuffledOrder(sentences.length));
     setPointer(0);
     setTyped("");
@@ -580,6 +581,29 @@ const KioskPage = () => {
     if (!hasStartedTyping) setHasStartedTyping(true);
     const value = e.target.value;
     if (value.length > current.text.length) return;
+
+    // Anti-cheat: credit WPM only for characters that actually match the
+    // target sentence at the position they were typed, not every keystroke
+    // unconditionally - otherwise mashing random keys as fast as possible
+    // scores the same WPM as real typing. Diffs against the previous
+    // `typed` value rather than just checking the newest character so
+    // backspacing away a correct character properly un-credits it, the
+    // same "type a burst, then delete it" cheat TypeBox.jsx's wpmKeyStrokes
+    // already has to guard against for its own anti-cheat.
+    if (value.length > typed.length) {
+      for (let i = typed.length; i < value.length; i++) {
+        if (value[i] === current.text[i]) {
+          correctKeystrokeCountRef.current += 1;
+        }
+      }
+    } else if (value.length < typed.length) {
+      for (let i = value.length; i < typed.length; i++) {
+        if (typed[i] === current.text[i]) {
+          correctKeystrokeCountRef.current = Math.max(0, correctKeystrokeCountRef.current - 1);
+        }
+      }
+    }
+
     setTyped(value);
 
     if (value === current.text) {
@@ -597,21 +621,6 @@ const KioskPage = () => {
 
   const handleKeyDown = (e) => {
     if (e.key === "Tab") e.preventDefault();
-    // Credit every printable keystroke toward WPM as it happens, not just
-    // ones that end up in a perfectly-typed sentence - see keystrokeCountRef
-    // above for why. Mirrors TypeBox.jsx's wpmKeyStrokes filter: single
-    // printable characters only, excluding modifier-held combos (Ctrl+A,
-    // Cmd+C, etc.) which aren't real char input.
-    if (
-      !sessionEnded &&
-      e.key &&
-      e.key.length === 1 &&
-      !e.ctrlKey &&
-      !e.metaKey &&
-      !e.altKey
-    ) {
-      keystrokeCountRef.current += 1;
-    }
   };
 
   const handleInitialsChange = (e) => {
