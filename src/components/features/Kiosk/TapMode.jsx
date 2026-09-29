@@ -59,9 +59,18 @@ const Wrap = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* Nudged toward the top rather than dead-centered, matching the spirit
+     of KioskPage.jsx's Main - but only a modest amount: unlike the
+     sentence-typing view, this one's content (timer + full QWERTY keyboard
+     + prompt) already fills most of the viewport height, so the same
+     top-third offset used there pushed the bottom row and prompt off
+     screen (verified by measuring an 1120px-tall page inside a 1080px
+     viewport at 1920x1080). */
+  justify-content: flex-start;
+  padding-top: clamp(0.5rem, calc(9vh - 64px), 3rem);
   gap: clamp(1.5rem, 4vh, 3rem);
-  padding: var(--space-8) var(--space-4);
+  padding-inline: var(--space-4);
+  padding-bottom: var(--space-8);
   text-align: center;
 `;
 
@@ -85,19 +94,19 @@ const Raindrop = styled.span`
 `;
 
 const Timer = styled.div`
-  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  font-size: clamp(3.25rem, 8.5vw, 6.5rem);
   font-weight: var(--fw-bold);
   color: var(--text-body);
   font-variant-numeric: tabular-nums;
 `;
 
 const Prompt = styled.div`
-  font-size: clamp(1.25rem, 2.6vw, 2rem);
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem);
   color: var(--text-muted);
 `;
 
 const KeyboardWrap = styled.div`
-  --key-size: clamp(3.5rem, min(7.5vw, 11vh), 7.5rem);
+  --key-size: clamp(4.25rem, min(9vw, 13vh), 9rem);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -122,7 +131,7 @@ const Key = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(1.5rem, min(3.2vw, 4.5vh), 3rem);
+  font-size: clamp(2rem, min(4vw, 5.5vh), 3.75rem);
   font-weight: var(--fw-bold);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
@@ -152,13 +161,13 @@ const EndCard = styled.div`
 `;
 
 const EndMessage = styled.div`
-  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
+  font-size: clamp(3rem, 7vw, 5rem);
   font-weight: var(--fw-bold);
   color: var(--text-body);
 `;
 
 const EndSub = styled.div`
-  font-size: clamp(1.25rem, 2.6vw, 1.75rem);
+  font-size: clamp(1.5rem, 3.2vw, 2.25rem);
   color: var(--text-body);
 `;
 
@@ -170,7 +179,7 @@ const ButtonRow = styled.div`
 
 const Button = styled.button`
   padding: var(--space-4) var(--space-8);
-  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
   border: none;

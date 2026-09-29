@@ -145,7 +145,7 @@ const BannerActions = styled.div`
 
 const SessionTimer = styled.div`
   flex-shrink: 0;
-  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  font-size: clamp(3.25rem, 8.5vw, 6.5rem);
   font-weight: var(--fw-bold);
   color: ${({ $urgent }) => ($urgent ? "var(--color-danger)" : "var(--text-body)")};
   font-variant-numeric: tabular-nums;
@@ -171,24 +171,35 @@ const Main = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
-  padding: var(--space-8) var(--space-4);
+  /* Anchored near the top third of the screen (not vertically centered) so
+     it's the first thing a passerby's eyes land on at head height, rather
+     than sitting mid-screen where it's easy to walk past without noticing.
+     BANNER_HEIGHT is subtracted since that's already consumed above Main. */
+  justify-content: flex-start;
+  padding-top: clamp(1.5rem, calc(30vh - ${BANNER_HEIGHT}), 9rem);
+  gap: var(--space-8);
+  padding-inline: var(--space-4);
+  /* Reserves room for LeaderboardPanel's fixed bottom-right footprint (it
+     always renders alongside Main - see the viewMode==="typing" branch
+     below) so a tall, multi-line sentence never wraps down far enough to
+     render behind it. Without this, bumping SentenceCard's font size made
+     that overlap much more likely than it was at the old, smaller size. */
+  padding-bottom: clamp(6rem, 16vh, 10rem);
   text-align: center;
 `;
 
 const Eyebrow = styled.div`
-  font-size: 11px;
+  font-size: clamp(14px, 1.6vw, 20px);
   font-weight: var(--fw-medium);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   color: var(--text-muted);
 `;
 
 const SentenceCard = styled.div`
   position: relative;
-  max-width: min(90vw, 1000px);
-  font-size: clamp(1.5rem, 3.4vw, 2.5rem);
+  max-width: min(90vw, 1100px);
+  font-size: clamp(2.25rem, 5vw, 4rem);
   font-weight: var(--fw-medium);
   line-height: var(--lh-normal);
 `;
@@ -240,7 +251,7 @@ const HiddenInput = styled.input`
 `;
 
 const Wpm = styled.div`
-  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-size: clamp(3.25rem, 8vw, 6rem);
   font-weight: var(--fw-bold);
   color: var(--color-brand);
 `;
@@ -249,19 +260,19 @@ const SessionEndCard = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
 `;
 
 const SessionEndMessage = styled.div`
-  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-size: clamp(2.25rem, 5.5vw, 3.75rem);
   font-weight: var(--fw-bold);
   color: var(--text-body);
 `;
 
 const RestartButton = styled.button`
   margin-top: var(--space-2);
-  padding: var(--space-3) var(--space-6);
-  font-size: var(--fs-md);
+  padding: var(--space-4) var(--space-8);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
   font-family: var(--font-sans);
   font-weight: var(--fw-medium);
   border: none;
@@ -353,12 +364,12 @@ const InitialsRow = styled.div`
 `;
 
 const InitialsBox = styled.div`
-  width: 2.5rem;
-  height: 3rem;
+  width: 3.5rem;
+  height: 4.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--fs-2xl);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
   font-weight: var(--fw-bold);
   font-family: var(--font-mono);
   color: ${({ $filled }) => ($filled ? "var(--text-body)" : "var(--border-default)")};
@@ -367,7 +378,7 @@ const InitialsBox = styled.div`
 `;
 
 const InitialsPrompt = styled.div`
-  font-size: var(--fs-sm);
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
   color: var(--text-muted);
 `;
 
