@@ -16,7 +16,8 @@ special needs, or anyone just passing by) get their own simplified,
 always-encouraging Tap Mode.
 
 It's part of **Iterverse**, BTECH IT's umbrella platform alongside
-[Reader](https://github.com/cuaquero/iterverse_reader),
+[Library](https://github.com/cuaquero/iterverse_library),
+[Reps](https://github.com/cuaquero/iterverse_ai),
 [Hub](https://github.com/cuaquero/iterverse_hub),
 [Labs](https://github.com/cuaquero/iterverse_labs),
 [Simulations](https://github.com/cuaquero/iterverse_simulations),
