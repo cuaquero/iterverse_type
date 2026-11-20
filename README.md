@@ -81,11 +81,13 @@ theme picker), typing sounds, and PWA install support.
 
 `/admin` (reachable from a small icon at the top of the main page) is an
 editor for the local-history sentence pack that backs Kiosk mode and Local
-History mode. It sits behind **Cloudflare Access** — the same
-platform-auth pattern every other Iterverse product uses (see
+History mode. It sits behind **Cloudflare Access**, the same
+platform-auth pattern the other Iterverse products use for staff pages (see
 [`docs/ACCESS.md`](docs/ACCESS.md) for the Zero Trust setup and
 `functions/admin/`/`functions/_utils/access.js` for the verification code).
-Signing in is real staff SSO, not an app-level password.
+Signing in is staff SSO, not an app-level password. The Worker also verifies
+the Access JWT itself (audience `ACCESS_AUD_ADMIN`), so a misconfigured
+Access Application fails closed.
 
 Once signed in, edits go straight to the shared content store (Cloudflare
 D1). Reads and writes are deliberately split across two paths, since
@@ -108,6 +110,17 @@ npm run build    # production bundle to build/
 npm run preview  # serve the production bundle locally
 ```
 
+`npm run dev` is plain Vite and does not run the Pages Functions, so the
+`/admin` page loads with no gate and its API (and `GET /api/content-sources`)
+is unavailable. Kiosk and Local History mode fall back to the bundled sentence
+JSON. `wrangler pages dev build` runs the Functions, but `/admin` still
+rejects every request there because no real Access JWT is present; the gate
+can only be tested on a deployment.
+There is no test runner; CI (`.github/workflows/ci.yml`) runs `npm ci` and
+`npm run build` on pushes and PRs to `main`. The `Dockerfile` and
+`docker-compose.yml` are left over from the upstream project and run the Vite
+dev server on port 3000; they are not used for deployment.
+
 ## Content safety
 
 Any public-facing sentence/word pack (like the Kiosk mode local-history
@@ -129,7 +142,15 @@ wrangler pages deploy build --project-name=iterverse-type`, which also
 picks up `functions/` (the Content Sources API and Access verification)
 and `wrangler.toml`'s D1 binding and Access vars automatically.
 `public/_redirects` carries the SPA-fallback rewrite Pages needs for
-client-side routes like `/kiosk` and `/admin`.
+client-side routes like `/kiosk` and `/admin`. `npm run pages:deploy` runs the
+build and the same deploy command.
+
+The content store is the D1 database `iterverse-type-content` (binding `DB`).
+Schema changes are numbered files in `migrations/`, applied with
+`npx wrangler d1 migrations apply iterverse-type-content --remote`.
+
+Hub links to Type from its landing page only. There is no roster or entitlement
+check, because the app also runs as a no-login kiosk.
 
 ## License
 
