@@ -17,7 +17,7 @@ always-encouraging Tap Mode.
 
 It's part of **Iterverse**, BTECH IT's umbrella platform alongside
 [Library](https://github.com/cuaquero/iterverse_library),
-[Reps](https://github.com/cuaquero/iterverse_ai),
+[Reps](https://github.com/cuaquero/iterverse_reps),
 [Hub](https://github.com/cuaquero/iterverse_hub),
 [Labs](https://github.com/cuaquero/iterverse_labs),
 [Simulations](https://github.com/cuaquero/iterverse_simulations),
